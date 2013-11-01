@@ -1,4 +1,6 @@
 averybot
 ========
 
-A markov bot to emulate avery.
+A markov bot to ~~replace~~ complement avery.
+
+TODO: Make this readme useful.
