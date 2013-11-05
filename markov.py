@@ -23,7 +23,7 @@ class MarkovElem(object):
     def __hash__(self): return hash(self.word.lower())
 
     def __repr__(self):
-        return '"' + self.word + '":' + repr(self.tags)
+        return repr(self.word) + ':' + repr(self.tags)
 
     def __str__(self):
         return self.word
@@ -82,7 +82,10 @@ def sanitize(data):
             terms += word[-1]
             word = word[:-1]
 
-        ret.append(MarkovElem(word))
+        elem = MarkovElem(word)
+
+        # add word to data
+        ret.append(elem)
         if len(terms) > 0:
             ret.append(MarkovPunc(terms))
 
@@ -120,10 +123,10 @@ if __name__ == "__main__":
     for line in open("avery.log", "r"):
         mind = learn(sanitize(line), 2, mind)
 
-    # for e in mind:
-    #     print(e, mind[e])
+    # for debugging
+    #for e in mind:
+    #    print(e, mind[e])
 
-    # for word in talk(mind, pickstart(mind)):
     for word in talk(mind):
         if word.tag_is("pos", "BEGIN"):
             print(word, end='')
