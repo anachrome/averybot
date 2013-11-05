@@ -12,9 +12,6 @@ class MarkovElem(object):
         self.word = w
         self.tags = tags
 
-    def __eq__(self, other):
-        return self.word == other.word and self.tags == other.tags
-
     # tag predicate / validation
     def tag_is(self, tag, value = True):
         return tag in self.tags.keys() and self.tags[tag] == value
@@ -22,6 +19,10 @@ class MarkovElem(object):
     # for use in dict (comparisons should be case insensitive)
     def __hash__(self): return hash(self.word.lower())
 
+    def __eq__(self, other):
+        return self.word == other.word and self.tags == other.tags
+
+    # for showing
     def __repr__(self):
         return repr(self.word) + ':' + repr(self.tags)
 
