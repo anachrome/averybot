@@ -73,9 +73,22 @@ def learn(data, context, dict = None):
     return dict
 
 # turn a single line of text into a list of markov elements
+# (I would really like this to be a generater)
 def sanitize(data):
     ret = []
+
+    # preparatory shit
+    words = []
     for word in data.split():
+        elems = word.split('"')
+        words.append(elems[0])
+
+        for word in elems[1:]:
+            words.append('"')
+            words.append(word)
+            
+    quoted = False
+    for word in words:
         # split off terminal punctuation
         terms = ""
         while len(word) and word[-1] in "?.!":
@@ -83,6 +96,11 @@ def sanitize(data):
             word = word[:-1]
 
         elem = MarkovElem(word)
+
+        if word == '"':
+            quoted = not quoted
+        else:
+            elem.tags["quoted"] = quoted
 
         # add word to data
         ret.append(elem)
@@ -125,7 +143,7 @@ if __name__ == "__main__":
 
     # for debugging
     #for e in mind:
-    #    print(e, mind[e])
+    #   print(e, mind[e])
 
     for word in talk(mind):
         if word.tag_is("pos", "BEGIN"):
