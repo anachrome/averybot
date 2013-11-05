@@ -15,13 +15,11 @@ class MarkovElem(object):
     def __eq__(self, other):
         return self.word == other.word and self.tags == other.tags
 
-    # predicates
-    def isbegin():
-        return self.tags["pos"] == "BEGIN"
-    def isend():
-        return self.tags["pos"] == "END"
+    # tag predicate / validation
+    def tag_is(self, tag, value = True):
+        return tag in self.tags.keys() and self.tags[tag] == value
 
-    # for use in dict
+    # for use in dict (comparisons should be case insensitive)
     def __hash__(self): return hash(self.word.lower())
 
     def __repr__(self):
@@ -84,14 +82,9 @@ def sanitize(data):
             terms += word[-1]
             word = word[:-1]
 
-        # # desensitize words (to case)
-        # word = word.lower()
-
         ret.append(MarkovElem(word))
         if len(terms) > 0:
             ret.append(MarkovPunc(terms))
-
-    # print(ret)
 
     ret[0].tags["pos"] = "BEGIN"
     ret[-1].tags["pos"] = "END"
@@ -102,36 +95,40 @@ def step(dict, k):
     possibs = dict[k]
     return possibs[randrange(len(possibs))]
 
-def talk(dict, k):
+def talk(dict):
+    # find starting [k]ontext
+    ks = list(dict.keys())
+    shuffle(ks)
+    for k in ks:
+        if k[0].tag_is("pos", "BEGIN"): break
+
+    # yield everything in initial [k]ontext
     for el in k:
         yield el
 
+    # yield the rest
     while True:
         next = step(dict, k)
         yield next
 
+        # found ending [k]ontext
         k = k[1:] + (next,)
-        if "pos" in next.tags.keys() and next.tags["pos"] == "END": break
+        if next.tag_is("pos", "END"): break
 
-def pickstart(dict):
-    ks = list(dict.keys())
-    shuffle(ks)
-    for k in ks:
-        if "pos" in k[0].tags.keys() and k[0].tags["pos"] == "BEGIN":
-            return k
+if __name__ == "__main__":
+    mind = ListDict()
+    for line in open("avery.log", "r"):
+        mind = learn(sanitize(line), 2, mind)
 
-mind = ListDict()
-for line in open("avery.log", "r"):
-    mind = learn(sanitize(line), 2, mind)
+    # for e in mind:
+    #     print(e, mind[e])
 
-# for e in mind:
-#     print(e, mind[e])
-
-for word in talk(mind, pickstart(mind)):
-    if "pos" in word.tags.keys() and word.tags["pos"] == "BEGIN":
-        print(word, end='')
-    elif "punc" in word.tags.keys() and word.tags["punc"]:
-        print(word, end='')
-    else:
-        print(' ', word, sep='', end='')
-print()
+    # for word in talk(mind, pickstart(mind)):
+    for word in talk(mind):
+        if word.tag_is("pos", "BEGIN"):
+            print(word, end='')
+        elif word.tag_is("punc"):
+            print(word, end='')
+        else:
+            print(' ', word, sep='', end='')
+    print()
