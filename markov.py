@@ -28,20 +28,6 @@ class MarkovElem(object):
     def __str__(self):
         return self.word
 
-def MarkovPunc(w, tags = None):
-    if tags is None:
-        tags = {}
-
-    tags["punc"] = True
-    return MarkovElem(w, tags)
-
-def MarkovPos(w, pos, tags = None):
-    if tags is None:
-        tags = {}
-
-    tags["pos"] = pos
-    return MarkovElem(w, tags)
-
 # a special dictionary--it basically treats uninitialized keys as empty lists
 # for things like d[k].append(asdf)
 class ListDict(dict):
@@ -105,8 +91,9 @@ def sanitize(data):
         # add word to data
         ret.append(elem)
         if len(terms) > 0:
-            ret.append(MarkovPunc(terms))
+            ret.append(MarkovElem(terms, {"punc":True}))
 
+    # these are porblematic for generatoring
     ret[0].tags["pos"] = "BEGIN"
     ret[-1].tags["pos"] = "END"
 
@@ -132,7 +119,7 @@ def talk(dict):
         next = step(dict, k)
         yield next
 
-        # found ending [k]ontext
+        # found ending [k]ontext (?)
         k = k[1:] + (next,)
         if next.tag_is("pos", "END"): break
 
