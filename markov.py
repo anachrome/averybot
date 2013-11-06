@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from random import randrange, shuffle
+import re
 
 # class to represent a single element in the markov dictionary
 # can be either a string, or a special tag for things like the end of the data
@@ -67,14 +68,15 @@ def sanitize(data):
     # preparatory shit
     words = []
     for word in data.split():
-        elems = word.split('"')
-        words.append(elems[0])
+        def choice(*strs):
+            return '(' + '|'.join(strs) + ')'
+        oparen = '(?<=[^:])\('
+        cparen = '(?<=[^:])\)'
+        words += filter(lambda x: x != "",
+            re.split(choice(oparen, cparen, '"'), word))
 
-        for word in elems[1:]:
-            words.append('"')
-            words.append(word)
-            
     quoted = False
+    parendepth = 0
     for word in words:
         # split off terminal punctuation
         terms = ""
@@ -82,15 +84,27 @@ def sanitize(data):
             terms += word[-1]
             word = word[:-1]
 
-        elem = MarkovElem(word)
+        if word != "":
+            elem = MarkovElem(word)
 
-        if word == '"':
-            quoted = not quoted
-        else:
-            elem.tags["quoted"] = quoted
+            if word == '"':
+                quoted = not quoted
+            else:
+                elem.tags["quoted"] = quoted
 
-        # add word to data
-        ret.append(elem)
+            if word == '(':
+                elem.tags["parendepth"] = parendepth
+                parendepth += 1
+            elif word == ')':
+                parendepth -= 1
+                elem.tags["parendepth"] = parendepth
+            else:
+                elem.tags["parendepth"] = parendepth
+
+            # add word to data
+            ret.append(elem)
+
+        # terminal punctuation gets added now
         if len(terms) > 0:
             ret.append(MarkovElem(terms, {"punc":True}))
 
