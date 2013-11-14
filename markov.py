@@ -39,27 +39,6 @@ class ListDict(dict):
 
         return super(ListDict, self).__getitem__(key)
 
-# create (or add to) a markov dictionary from a set of data
-def learn(data, context, dict = None):
-    if dict is None:
-        dict = ListDict()
-
-    if len(data) <= context:
-        return dict
-
-    for i in range(len(data) - context):
-        # generate [k]ontext and [v]alue
-        k = []
-        for j in range(context):
-            k.append(data[i + j])
-        v = data[i + context]
-
-        # add to dictionary
-        k = tuple(k)
-        dict[k].append(v)
-
-    return dict
-
 # turn a single line of text into a list of markov elements
 # (I would really like this to be a generater)
 def sanitize(data):
@@ -114,44 +93,82 @@ def sanitize(data):
 
     return ret
 
-def step(dict, k):
-    possibs = dict[k]
-    return possibs[randrange(len(possibs))]
+# inverse of sanitize--turns a list of markov elements into a string
+def prettify(data):
+    pretty = ""
+    for word in data:
+        if word.tag_is("pos", "BEGIN"):
+            pretty += str(word)
+        elif word.tag_is("punc"):
+            pretty += str(word)
+        else:
+            pretty += (" " + str(word))
 
-def talk(dict):
-    # find starting [k]ontext
-    ks = list(dict.keys())
-    shuffle(ks)
-    for k in ks:
-        if k[0].tag_is("pos", "BEGIN"): break
+    return pretty
 
-    # yield everything in initial [k]ontext
-    for el in k:
-        yield el
 
-    # yield the rest
-    while True:
-        next = step(dict, k)
-        yield next
+    def learn(self, data):
+        self.ldict = learn(sanitize(data), self.context, self.ldict)
 
-        # found ending [k]ontext (?)
-        k = k[1:] + (next,)
-        if next.tag_is("pos", "END"): break
+    def talk(self):
+        return prettify(talk(self.ldict))
+
+class Markov(object):
+    def __init__(self, context, ldict = None):
+        if ldict is None:
+            ldict = ListDict()
+        self.context = context
+        self.ldict = ldict
+
+    # add a set of data (list of markov elements) to the dictionary
+    def feed(self, data):
+        if len(data) <= self.context:
+            return
+
+        for i in range(len(data) - self.context):
+            # generate [k]ontext and [v]alue
+            k = []
+            for j in range(self.context):
+                k.append(data[i + j])
+            v = data[i + self.context]
+
+            # add to ldictionary
+            k = tuple(k)
+            self.ldict[k].append(v)
+
+    def learn(self, str):
+        self.feed(sanitize(str))
+
+    def gen(self):
+        # find starting [k]ontext
+        ks = list(self.ldict.keys())
+        shuffle(ks)
+        for k in ks:
+            if k[0].tag_is("pos", "BEGIN"): break
+
+        # yield everything in initial [k]ontext
+        for el in k:
+            yield el
+
+        # yield the rest
+        while True:
+            next = self.ldict[k][randrange(len(self.ldict[k]))]
+            yield next
+
+            # found ending [k]ontext (?)
+            k = k[1:] + (next,)
+            if next.tag_is("pos", "END"): break
+
+    def talk(self):
+        return prettify(self.gen())
 
 if __name__ == "__main__":
-    mind = ListDict()
-    for line in open("avery.log", "r"):
-        mind = learn(sanitize(line), 2, mind)
+    ave = Markov(2)
+    for line in open("avery.log", 'r'):
+        ave.learn(line)
 
     # for debugging
-    #for e in mind:
-    #   print(e, mind[e])
+    #for e in ave.ldict:
+    #  print(e, ave.ldict[e])
 
-    for word in talk(mind):
-        if word.tag_is("pos", "BEGIN"):
-            print(word, end='')
-        elif word.tag_is("punc"):
-            print(word, end='')
-        else:
-            print(' ', word, sep='', end='')
-    print()
+    print(ave.talk())
