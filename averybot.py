@@ -1,16 +1,13 @@
 import irc
 from irc.bot import SingleServerIRCBot
 
-import markov
-
-mind = markov.ListDict()
-for line in open("avery.log", "r"):
-    mind = markov.learn(markov.sanitize(line), 2, mind)
+from markov import Markov
 
 class AveryBot(SingleServerIRCBot):
-    def __init__(self, channel, nickname, server, port=6667):
+    def __init__(self, mind, channel, nickname, server, port=6667):
         SingleServerIRCBot.__init__(self, [(server, port)], nickname, nickname)
         self.channel = channel
+        self.mind = mind
 
     def on_welcome(self, c, e):
         c.join(self.channel)
@@ -23,14 +20,7 @@ class AveryBot(SingleServerIRCBot):
 
     def do_shit(self, c, target, text):
         if text == "@talk":
-            response = ""
-            for word in markov.talk(mind):
-                if word.tag_is("pos", "BEGIN"):
-                    response += str(word)
-                elif word.tag_is("punc"):
-                    response += str(word)
-                else:
-                    response += (" " + str(word))
+            response = self.mind.talk()
             c.privmsg(target, response)
 
 def main():
@@ -52,7 +42,11 @@ def main():
     channel = sys.argv[2]
     nickname = sys.argv[3]
 
-    ave = AveryBot(channel, nickname, server, port)
+    mind = Markov(2)
+    for line in open("avery.log", 'r'):
+        mind.learn(line)
+
+    ave = AveryBot(mind, channel, nickname, server, port)
     ave.start()
 
 if __name__ == "__main__":
