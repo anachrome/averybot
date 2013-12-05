@@ -49,8 +49,8 @@ def sanitize(data):
     for word in data.split():
         def choice(*strs):
             return '(' + '|'.join(strs) + ')'
-        oparen = '(?<=[^:])\('
-        cparen = '(?<=[^:])\)'
+        oparen = '^\(|(?<=[^:])\('
+        cparen = '^\(|(?<=[^:])\)'
         words += filter(lambda x: x != "",
             re.split(choice(oparen, cparen, '"'), word))
 
@@ -68,14 +68,20 @@ def sanitize(data):
 
             if word == '"':
                 quoted = not quoted
+                if quoted:
+                    elem.tags["parenthesque"] = "open"
+                else:
+                    elem.tags["parenthesque"] = "close"
             else:
                 elem.tags["quoted"] = quoted
 
             if word == '(':
                 elem.tags["parendepth"] = parendepth
+                elem.tags["parenthesque"] = "open"
                 parendepth += 1
             elif word == ')':
                 parendepth -= 1
+                elem.tags["parenthesque"] = "close"
                 elem.tags["parendepth"] = parendepth
             else:
                 elem.tags["parendepth"] = parendepth
@@ -96,13 +102,26 @@ def sanitize(data):
 # inverse of sanitize--turns a list of markov elements into a string
 def prettify(data):
     pretty = ""
+
+    quoted = False
     for word in data:
-        if word.tag_is("pos", "BEGIN"):
+        if word.tag_is("punc"):
+            pretty = pretty[:-1] + str(word) + ' '
+        elif word.tag_is("parenthesque", "open"):
             pretty += str(word)
-        elif word.tag_is("punc"):
+        elif word.tag_is("parenthesque", "close"):
+            pretty = pretty[:-1] + str(word) + ' '
+        elif word.tag_is("pos", "END"):
             pretty += str(word)
         else:
-            pretty += (" " + str(word))
+            pretty += (str(word) + ' ')
+
+        # if word.tag_is("pos", "BEGIN"):
+        #     pretty += str(word)
+        # elif word.tag_is("punc"):
+        #     pretty += str(word)
+        # else:
+        #     pretty += (" " + str(word))
 
     return pretty
 
@@ -171,4 +190,6 @@ if __name__ == "__main__":
     #for e in ave.ldict:
     #  print(e, ave.ldict[e])
 
+    # for word in ave.gen():
+    #     print(repr(word))
     print(ave.talk())
