@@ -32,7 +32,7 @@ class AveryBot(SingleServerIRCBot):
 
     def do_shit(self, c, e, target):
         text = e.arguments[0]
-        if e.source.nick == real:
+        if e.source.nick == self.real:
             print("YES: " + text)
         if text == "@talk":
             self.rstate = random.getstate()
