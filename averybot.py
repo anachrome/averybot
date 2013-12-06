@@ -31,7 +31,7 @@ class AveryBot(SingleServerIRCBot):
         self.do_shit(c, e, e.target)
 
     def do_shit(self, c, e, target):
-        text = e.argument[0]
+        text = e.arguments[0]
         if e.source.nick == real:
             print("YES: " + text)
         if text == "@talk":
