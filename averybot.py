@@ -6,10 +6,18 @@ from irc.bot import SingleServerIRCBot
 
 from markov import Markov
 
-class AveryBot(SingleServerIRCBot):
-    def __init__(self, mind, channel, nickname, server, port=6667):
-        SingleServerIRCBot.__init__(self, [(server, port)], nickname, nickname)
+class IRCID:
+    def __init__(self, channel, nickname, server, port = 6667):
         self.channel = channel
+        self.nickname = nickname
+        self.server = server
+        self.port = port
+
+class AveryBot(SingleServerIRCBot):
+    def __init__(self, mind, real, ident):
+        SingleServerIRCBot.__init__(self,
+            [(ident.server, ident.port)], ident.nickname, ident.nickname)
+        self.channel = ident.channel
         self.mind = mind
         self.rstate = random.getstate()
 
@@ -17,12 +25,15 @@ class AveryBot(SingleServerIRCBot):
         c.join(self.channel)
 
     def on_privmsg(self, c, e):
-        self.do_shit(c, e.source.nick, e.arguments[0])
+        self.do_shit(c, e, e.source.nick)
 
     def on_pubmsg(self, c, e):
-        self.do_shit(c, e.target, e.arguments[0])
+        self.do_shit(c, e, e.target)
 
-    def do_shit(self, c, target, text):
+    def do_shit(self, c, e, target):
+        text = e.argument[0]
+        if e.source.nick == real:
+            print("YES: " + text)
         if text == "@talk":
             self.rstate = random.getstate()
             c.privmsg(target, self.mind.talk())
@@ -58,7 +69,9 @@ def main():
     for line in open("avery.log", 'r'):
         mind.learn(line)
 
-    ave = AveryBot(mind, channel, nickname, server, port)
+    aveid = IRCID(channel, nickname, server, port)
+
+    ave = AveryBot(mind, "averystrange", aveid)
     ave.start()
 
 if __name__ == "__main__":
