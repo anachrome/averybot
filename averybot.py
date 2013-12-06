@@ -20,6 +20,7 @@ class AveryBot(SingleServerIRCBot):
         self.channel = ident.channel
         self.mind = mind
         self.rstate = random.getstate()
+        self.real = real
 
     def on_welcome(self, c, e):
         c.join(self.channel)
