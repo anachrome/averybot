@@ -1,3 +1,6 @@
+import random
+import pickle
+
 import irc
 from irc.bot import SingleServerIRCBot
 
@@ -8,6 +11,7 @@ class AveryBot(SingleServerIRCBot):
         SingleServerIRCBot.__init__(self, [(server, port)], nickname, nickname)
         self.channel = channel
         self.mind = mind
+        self.rstate = random.getstate()
 
     def on_welcome(self, c, e):
         c.join(self.channel)
@@ -20,8 +24,16 @@ class AveryBot(SingleServerIRCBot):
 
     def do_shit(self, c, target, text):
         if text == "@talk":
-            response = self.mind.talk()
-            c.privmsg(target, response)
+            self.rstate = random.getstate()
+            c.privmsg(target, self.mind.talk())
+        elif text == "@freeze":
+            pickle.dump(self.rstate, open('asdf', 'wb'))
+        elif text == "@thaw":
+            self.rstate = pickle.load(open('asdf', 'rb'))
+            random.setstate(self.rstate)
+        elif text in ["@repeat", "@again"]:
+            random.setstate(self.rstate)
+            c.privmsg(target, self.mind.talk())
 
 def main():
     import sys
