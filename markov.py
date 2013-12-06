@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from random import randrange, shuffle
+from random import choice, shuffle
 
 import re
 import pickle
@@ -182,8 +182,7 @@ class Markov(object):
             #         possibs))
             #     if len(endsibs) > 0:
             #         possibs = endsibs
-            index = randrange(len(possibs))
-            next = possibs[index]
+            next = choice(possibs)
 
             # next = self.ldict[k][randrange(len(self.ldict[k]))]
             yield next
