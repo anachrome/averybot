@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
 from random import randrange, shuffle
+
 import re
+import pickle
 
 # class to represent a single element in the markov dictionary
 # can be either a string, or a special tag for things like the end of the data
@@ -126,12 +128,6 @@ def prettify(data):
     return pretty
 
 
-    def learn(self, data):
-        self.ldict = learn(sanitize(data), self.context, self.ldict)
-
-    def talk(self):
-        return prettify(talk(self.ldict))
-
 class Markov(object):
     def __init__(self, context, ldict = None):
         if ldict is None:
@@ -158,7 +154,9 @@ class Markov(object):
     def learn(self, str):
         self.feed(sanitize(str))
 
-    def gen(self):
+    def gen(self, minlen = 0, maxlen = 0):
+        pos = 0
+
         # find starting [k]ontext
         ks = list(self.ldict.keys())
         shuffle(ks)
@@ -171,7 +169,23 @@ class Markov(object):
 
         # yield the rest
         while True:
-            next = self.ldict[k][randrange(len(self.ldict[k]))]
+            pos += 1
+
+            possibs = self.ldict[k]
+            # if pos < minlen:
+            #     contsibs = list(filter(lambda x: not x.tag_is("pos", "END"),
+            #         possibs))
+            #     if len(contsibs) > 0:
+            #         possibs = contsibs
+            # if maxlen != 0 and pos >= maxlen:
+            #     endsibs = list(filter(lambda x: x.tag_is("pos", "END"),
+            #         possibs))
+            #     if len(endsibs) > 0:
+            #         possibs = endsibs
+            index = randrange(len(possibs))
+            next = possibs[index]
+
+            # next = self.ldict[k][randrange(len(self.ldict[k]))]
             yield next
 
             # found ending [k]ontext (?)
@@ -182,14 +196,19 @@ class Markov(object):
         return prettify(self.gen())
 
 if __name__ == "__main__":
-    ave = Markov(2)
-    for line in open("avery.log", 'r'):
-        ave.learn(line)
+    # ave = Markov(2)
+    # for line in open("avery.log", 'r'):
+    #     ave.learn(line)
+    ave = pickle.load(open("avery.mem", 'rb'))
 
     # for debugging
     #for e in ave.ldict:
     #  print(e, ave.ldict[e])
 
+    # out = []
+    # while len(out) != 10:
+    #     out = list(ave.gen())
+    # print(prettify(out))
     # for word in ave.gen():
     #     print(repr(word))
     print(ave.talk())
