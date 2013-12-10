@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
 from random import choice, shuffle
+import random
 
 import re
 import pickle
+import sys
 
 # class to represent a single element in the markov dictionary
 # can be either a string, or a special tag for things like the end of the data
@@ -195,6 +197,9 @@ class Markov(object):
         return prettify(self.gen())
 
 if __name__ == "__main__":
+    if len(sys.argv) > 1 and sys.argv[1] == "load":
+        random.setstate(pickle.load(open("rstate.froze", 'rb')))
+    pickle.dump(random.getstate(), open("rstate.froze", 'wb'))
     # ave = Markov(2)
     # for line in open("avery.log", 'r'):
     #     ave.learn(line)

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # a script to turn a list of lines into a serialized markov dictionary
 import sys
 import pickle
