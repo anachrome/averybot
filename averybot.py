@@ -78,7 +78,7 @@ def main():
     nickname = sys.argv[3]
 
     try:
-        mind = pickle.load(open("ave.mind", 'rb'))
+        mind = pickle.load(open("avery.mem", 'rb'))
     except IOError:
         print("No markov file (ave.mind); creating blank one")
         mind = Markov(2)
