@@ -43,6 +43,15 @@ class ListDict(dict):
 
         return super(ListDict, self).__getitem__(key)
 
+# diagnostic class for useful information on markov-generating
+class Diagnostics:
+    def __init__(self, porb, branches):
+        self.porb = porb
+        self.branches = branches
+
+    def __str__(self):
+        return str(self.porb) + " / " + str(self.branches)
+
 # turn a single line of text into a list of markov elements
 # (I would really like this to be a generater)
 def sanitize(data):
@@ -130,16 +139,57 @@ def prettify(data):
     return pretty
 
 
-class Markov(object):
+class Markov:
     def __init__(self, context, ldict = None):
         if ldict is None:
             ldict = ListDict()
         self.context = context
         self.ldict = ldict
+        self.diags = None
+
+    def gen(self):
+        porb = 1.0
+        branches = 0
+        pos = 0
+
+        # find starting [k]ontext
+        ks = list(self.ldict.keys())
+        shuffle(ks)
+        for k in ks:
+            if k[0].tag_is("pos", "BEGIN"): break
+
+        # yield everything in initial [k]ontext
+        tokes = list(k)
+        # for el in k:
+        #     yield el
+
+        # yield the rest
+        while True:
+            pos += 1
+
+            possibs = self.ldict[k]
+            next = choice(possibs)
+
+            # diagnostics
+            porb /= len(possibs)
+            if len(possibs) > 1:
+                branches += 1
+
+            # next = self.ldict[k][randrange(len(self.ldict[k]))]
+            tokes.append(next)
+            # yield next
+
+            # found ending [k]ontext (?)
+            k = k[1:] + (next,)
+            if next.tag_is("pos", "END"): break
+
+        self.diags = Diagnostics(porb, branches)
+        return tokes
 
     # add a set of data (list of markov elements) to the dictionary
     def feed(self, data):
-        if len(data) <= self.context:
+        # ignore data that doesn't add anything meaningful
+        if len(data) <= self.context + 1:
             return
 
         for i in range(len(data) - self.context):
@@ -155,43 +205,6 @@ class Markov(object):
 
     def learn(self, str):
         self.feed(sanitize(str))
-
-    def gen(self, minlen = 0, maxlen = 0):
-        pos = 0
-
-        # find starting [k]ontext
-        ks = list(self.ldict.keys())
-        shuffle(ks)
-        for k in ks:
-            if k[0].tag_is("pos", "BEGIN"): break
-
-        # yield everything in initial [k]ontext
-        for el in k:
-            yield el
-
-        # yield the rest
-        while True:
-            pos += 1
-
-            possibs = self.ldict[k]
-            # if pos < minlen:
-            #     contsibs = list(filter(lambda x: not x.tag_is("pos", "END"),
-            #         possibs))
-            #     if len(contsibs) > 0:
-            #         possibs = contsibs
-            # if maxlen != 0 and pos >= maxlen:
-            #     endsibs = list(filter(lambda x: x.tag_is("pos", "END"),
-            #         possibs))
-            #     if len(endsibs) > 0:
-            #         possibs = endsibs
-            next = choice(possibs)
-
-            # next = self.ldict[k][randrange(len(self.ldict[k]))]
-            yield next
-
-            # found ending [k]ontext (?)
-            k = k[1:] + (next,)
-            if next.tag_is("pos", "END"): break
 
     def talk(self):
         return prettify(self.gen())
@@ -216,3 +229,4 @@ if __name__ == "__main__":
     # for word in ave.gen():
     #     print(repr(word))
     print(ave.talk())
+    print(ave.diags)
