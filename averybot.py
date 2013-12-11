@@ -24,6 +24,20 @@ class AveryBot(SingleServerIRCBot):
         self.real = real                # real user she imitates (i.e. avery)
         self.save_counter = 0           # write to disk every 100 talks
 
+    def talk(self):
+        while True:
+            sentence = self.mind.talk()
+            # prevent convoing; prevent hilights
+            if self.channel not in self.channels:
+                print("AVEBOT ERROR: oh fuck this shouldn't actually happen")
+                break
+            if sentence[0] == '!':
+                continue
+            for user in self.channels[self.channel].users():
+                if user in sentence:
+                    continue
+            return sentence
+
     def on_welcome(self, c, e):
         c.join(self.channel)
 
@@ -37,12 +51,12 @@ class AveryBot(SingleServerIRCBot):
         text = e.arguments[0]
         if text == "@talk":
             self.rstate = random.getstate()
-            c.privmsg(target, self.mind.talk())
+            c.privmsg(target, self.talk())
         elif text == "@diag":
             c.privmsg(target, self.mind.diags)
         elif text == "@vtalk":
             c.privmsg(target,
-                self.mind.talk() + " [" + str(self.mind.diags) + "]")
+                self.talk() + " [" + str(self.mind.diags) + "]")
         elif text == "@freeze":
             pickle.dump(self.rstate, open("rstate", 'wb'))
         elif text == "@thaw":
@@ -50,7 +64,7 @@ class AveryBot(SingleServerIRCBot):
             random.setstate(self.rstate)
         elif text in ["@repeat", "@again"]:
             random.setstate(self.rstate)
-            c.privmsg(target, self.mind.talk())
+            c.privmsg(target, self.talk())
         elif text in ["@vrepeat", "@vagain"]:
             random.setstate(self.rstate)
             c.privmsg(target,
