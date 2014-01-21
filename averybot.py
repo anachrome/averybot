@@ -25,22 +25,39 @@ class AveryBot(SingleServerIRCBot):
             print("No markov file (ave.mind); creating blank one")
             self.mind = Markov(2)
 
+        # words that will highlight some nicks, in the form of a dictionary
+        # from words to the nicks they hilight.
+        self.highlights = {}
+
         self.channel = ident.channel    # active channel
         self.rstate = random.getstate() # random state
         self.real = real                # real user she imitates (i.e. avery)
         self.save_counter = 0           # write to disk every 100 talks
 
+    # return a list of words that cannot be said by comparing the hilights
+    # dict and the users currently in the channel
+    def blacklist():
+        bl = []
+        users = self.channels[self.channel].users()
+        for (key,val) in highlights:
+            if val in users:
+                bl.append(key)
+        return bl
+
     def talk(self):
         while True:
             sentence = self.mind.talk()
-            # prevent convoing; prevent hilights
             if self.channel not in self.channels:
                 print("AVEBOT ERROR: oh fuck this shouldn't actually happen")
                 break
+            # prevent convoing
             if sentence[0] == '!':
                 continue
-            for user in self.channels[self.channel].users():
-                if user in sentence:
+            # prevent hilights
+            for nope in blacklist():
+                if nope in sentence:
+                    print("cannot say because " + nope + " would highlight.  "
+                        + "retrying.");
                     continue
             return sentence
 
