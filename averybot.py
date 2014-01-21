@@ -14,12 +14,18 @@ class IRCID:
         self.port = port
 
 class AveryBot(SingleServerIRCBot):
-    def __init__(self, mind, real, ident):
+    def __init__(self, mindfile, real, ident):
         SingleServerIRCBot.__init__(self,
             [(ident.server, ident.port)], ident.nickname, ident.nickname)
-        self.channel = ident.channel
-        self.mind = mind                # markov data
-        self.mindfile = "avery.mem"     # file where to store that
+
+        # load mind
+        try:
+            self.mind = pickle.load(open(mindfile, 'rb'))
+        except IOError:
+            print("No markov file (ave.mind); creating blank one")
+            self.mind = Markov(2)
+
+        self.channel = ident.channel    # active channel
         self.rstate = random.getstate() # random state
         self.real = real                # real user she imitates (i.e. avery)
         self.save_counter = 0           # write to disk every 100 talks
@@ -100,15 +106,10 @@ def main():
     channel = sys.argv[2]
     nickname = sys.argv[3]
 
-    try:
-        mind = pickle.load(open("avery.mem", 'rb'))
-    except IOError:
-        print("No markov file (ave.mind); creating blank one")
-        mind = Markov(2)
     aveid = IRCID(channel, nickname, server, port)
 
     # ave = AveryBot(mind, "averystrange", aveid)
-    ave = AveryBot(mind, "averystrange", aveid)
+    ave = AveryBot("avery.mem", "averystrange", aveid)
     ave.start()
 
 if __name__ == "__main__":
