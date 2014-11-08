@@ -1,5 +1,6 @@
 import random
 import pickle
+import configparser as cfg
 
 import irc
 from irc.bot import SingleServerIRCBot
@@ -7,22 +8,24 @@ from irc.bot import SingleServerIRCBot
 from markov import Markov
 
 class IRCID:
-    def __init__(self, channel, nickname, server, port = 6667):
+    def __init__(self, channel, nickname, realname, server, port = 6667):
         self.channel = channel
         self.nickname = nickname
+        self.realname = realname
         self.server = server
         self.port = port
 
 class AveryBot(SingleServerIRCBot):
-    def __init__(self, mindfile, real, ident):
+    def __init__(self, mindfile, real_id, real, ident):
         SingleServerIRCBot.__init__(self,
-            [(ident.server, ident.port)], ident.nickname, ident.nickname)
+            [(ident.server, ident.port)], ident.nickname, ident.realname)
 
+        self.mindfile = mindfile
         # load mind
         try:
             self.mind = pickle.load(open(mindfile, 'rb'))
         except IOError:
-            print("No markov file (ave.mind); creating blank one")
+            print("No markov file (" + mindfile + ") found; making a blank one")
             self.mind = Markov(2)
 
         # words that will highlight some nicks, in the form of a dictionary
@@ -31,15 +34,16 @@ class AveryBot(SingleServerIRCBot):
 
         self.channel = ident.channel    # active channel
         self.rstate = random.getstate() # random state
+        self.real_id = real_id          # whether self.real is a user or a nick
         self.real = real                # real user she imitates (i.e. avery)
-        self.save_counter = 0           # write to disk every 100 talks
+        #self.save_counter = 0           # write to disk every 100 talks
 
     # return a list of words that cannot be said by comparing the hilights
     # dict and the users currently in the channel
-    def blacklist():
+    def blacklist(self):
         bl = []
         users = self.channels[self.channel].users()
-        for (key,val) in highlights:
+        for (key,val) in self.highlights:
             if val in users:
                 bl.append(key)
         return bl
@@ -51,10 +55,10 @@ class AveryBot(SingleServerIRCBot):
                 print("AVEBOT ERROR: oh fuck this shouldn't actually happen")
                 break
             # prevent convoing
-            if sentence[0] == '!':
+            if sentence.startswith("!"):
                 continue
             # prevent hilights
-            for nope in blacklist():
+            for nope in self.blacklist():
                 if nope in sentence:
                     print("cannot say because " + nope + " would highlight.  "
                         + "retrying.");
@@ -65,7 +69,9 @@ class AveryBot(SingleServerIRCBot):
         c.join(self.channel)
 
     def on_privmsg(self, c, e):
-        self.do_shit(c, e, e.source.nick)
+        # to prevent people secretly trying to game the markov dictionary
+        #self.do_shit(c, e, e.source.nick)
+        pass
 
     def on_pubmsg(self, c, e):
         self.do_shit(c, e, e.target)
@@ -100,33 +106,41 @@ class AveryBot(SingleServerIRCBot):
             pickle.dump(self.mind, open(self.mindfile, 'wb'))
             self.die("byebye") # bug: "byebye" doesn't always do
         else: # to prevent learning commands
-            if e.source.nick == self.real:
+            if self.real_id == "user":
+                source = e.source.user
+            elif self.real_id == "nick":
+                source = e.source.nick
+            if self.real in source.lower(): # extremely fucking liberal
                 self.mind.learn(text)
                 pickle.dump(self.mind, open(self.mindfile, 'wb'))
 
 def main():
     import sys
-    if len(sys.argv) != 4:
-        print("blah blha wornf argunamas")
+    if len(sys.argv) != 2:
+        print("usage: ./averybot.py <config>")
         sys.exit(1)
 
-    s = sys.argv[1].split(":", 1)
-    server = s[0]
-    if len(s) == 2:
-        try:
-            port = int(s[1])
-        except ValueError:
-            print("bad port")
-            sys.exit(1)
-    else:
-        port = 6667
-    channel = sys.argv[2]
-    nickname = sys.argv[3]
+    cfgp = cfg.ConfigParser()
+    cfgp.read(sys.argv[1])
 
-    aveid = IRCID(channel, nickname, server, port)
+    config = cfgp["averybot"]
 
-    # ave = AveryBot(mind, "averystrange", aveid)
-    ave = AveryBot("avery.mem", "averystrange", aveid)
+    server = config["server"]
+    port   = int(config["port"])
+    channel = config["channel"]
+    nickname = config["nickname"]
+    realname = config["realname"]
+
+    assimilee_id = config["assimilee_id"]
+    assimilee = config["assimilee"]
+
+    mindfile = config["mindfile"]
+
+    print(server, port, channel, nickname, realname)
+
+    aveid = IRCID(channel, nickname, realname, server, port)
+
+    ave = AveryBot(mindfile, assimilee_id, assimilee, aveid)
     ave.start()
 
 if __name__ == "__main__":

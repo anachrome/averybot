@@ -8,6 +8,7 @@ import markov
 if __name__ == "__main__":
     if len(sys.argv) < 3 or len(sys.argv) > 4:
         print("usage: " + sys.argv[0] + " <source> <dest> [<order> = 2]")
+        exit()
     src = sys.argv[1]
     dst = sys.argv[2]
     order = 2

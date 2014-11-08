@@ -154,6 +154,12 @@ class Markov:
 
         # find starting [k]ontext
         ks = list(self.ldict.keys())
+
+        # this is a bit of a hack to make it do something sensible if the
+        # dictionary is empty
+        if not ks:
+            return []
+
         shuffle(ks)
         for k in ks:
             if k[0].tag_is("pos", "BEGIN"): break
@@ -210,13 +216,13 @@ class Markov:
         return prettify(self.gen())
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1 and sys.argv[1] == "load":
-        random.setstate(pickle.load(open("rstate.froze", 'rb')))
-    pickle.dump(random.getstate(), open("rstate.froze", 'wb'))
-    # ave = Markov(2)
-    # for line in open("avery.log", 'r'):
-    #     ave.learn(line)
-    ave = pickle.load(open("avery.mem", 'rb'))
+    #if len(sys.argv) > 1 and sys.argv[1] == "load":
+    #    random.setstate(pickle.load(open("rstate.froze", 'rb')))
+    #pickle.dump(random.getstate(), open("rstate.froze", 'wb'))
+    ave = Markov(2)
+    for line in open("avery.talk", 'r'):
+        ave.learn(line)
+    #ave = pickle.load(open("avery.mem", 'rb'))
 
     # for debugging
     #for e in ave.ldict:
