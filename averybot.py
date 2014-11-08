@@ -70,7 +70,6 @@ class AveryBot(SingleServerIRCBot):
 
     def on_privmsg(self, c, e):
         self.do_shit(c, e, e.source.nick)
-        pass
 
     def on_pubmsg(self, c, e):
         self.do_shit(c, e, e.target)
@@ -80,6 +79,14 @@ class AveryBot(SingleServerIRCBot):
         if text == "@talk":
             self.rstate = random.getstate()
             c.privmsg(target, self.talk())
+        elif text == "@blacklist":
+            print(self.blacklist())
+        elif text == "@don't":
+            self.highlights[e.source.nick] = e.source.nick
+            print(self.highlights.keys())
+        elif text == "@do":
+            del self.highlights[e.source.nick]
+            print(self.highlights.keys())
         elif text == "@diag":
             c.privmsg(target, self.mind.diags)
         elif text == "@vtalk":
