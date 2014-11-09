@@ -89,6 +89,7 @@ class AveryBot(SingleServerIRCBot):
         elif text == "@diag":
             c.privmsg(target, self.mind.diags)
         elif text == "@vtalk":
+            self.rstate = random.getstate()
             c.privmsg(target,
                 self.talk() + " [" + str(self.mind.diags) + "]")
         elif text == "@freeze":
