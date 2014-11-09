@@ -43,8 +43,8 @@ class AveryBot(SingleServerIRCBot):
     def blacklist(self):
         bl = []
         users = self.channels[self.channel].users()
-        for (key,val) in enumerate(self.highlights):
-            if val in users:
+        for key in self.highlights:
+            if self.highlights[key] in users:
                 bl.append(key)
         return bl
 
