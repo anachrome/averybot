@@ -16,11 +16,12 @@ class IRCID:
         self.port = port
 
 class AveryBot(SingleServerIRCBot):
-    def __init__(self, mindfile, real_id, real, ident):
+    def __init__(self, mindfile, blfile, real_id, real, ident):
         SingleServerIRCBot.__init__(self,
             [(ident.server, ident.port)], ident.nickname, ident.realname)
 
         self.mindfile = mindfile
+        self.blfile = blfile
         # load mind
         try:
             self.mind = pickle.load(open(mindfile, 'rb'))
@@ -79,14 +80,12 @@ class AveryBot(SingleServerIRCBot):
         if text == "@talk":
             self.rstate = random.getstate()
             c.privmsg(target, self.talk())
-        elif text == "@blacklist":
-            print(self.blacklist())
         elif text == "@don't":
             self.highlights[e.source.nick] = e.source.nick
-            print(self.highlights.keys())
+            pickle.dump(blacklist(), open(self.blfile, 'wb'))
         elif text == "@do":
             del self.highlights[e.source.nick]
-            print(self.highlights.keys())
+            pickle.dump(blacklist(), open(self.blfile, 'wb'))
         elif text == "@diag":
             c.privmsg(target, self.mind.diags)
         elif text == "@vtalk":
@@ -141,12 +140,13 @@ def main():
     assimilee = config["assimilee"]
 
     mindfile = config["mindfile"]
+    blfile = config["blfile"]
 
     print(server, port, channel, nickname, realname)
 
     aveid = IRCID(channel, nickname, realname, server, port)
 
-    ave = AveryBot(mindfile, assimilee_id, assimilee, aveid)
+    ave = AveryBot(mindfile, blfile, assimilee_id, assimilee, aveid)
     ave.start()
 
 if __name__ == "__main__":
