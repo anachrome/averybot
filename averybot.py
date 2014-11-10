@@ -84,7 +84,8 @@ class AveryBot(SingleServerIRCBot):
             self.highlights[e.source.nick] = e.source.nick
             pickle.dump(self.blacklist(), open(self.blfile, 'wb'))
         elif text == "@do":
-            del self.highlights[e.source.nick]
+            if e.source.nick in self.highlights:
+                del self.highlights[e.source.nick]
             pickle.dump(self.blacklist(), open(self.blfile, 'wb'))
         elif text == "@diag":
             c.privmsg(target, self.mind.diags)
