@@ -82,10 +82,10 @@ class AveryBot(SingleServerIRCBot):
             c.privmsg(target, self.talk())
         elif text == "@don't":
             self.highlights[e.source.nick] = e.source.nick
-            pickle.dump(blacklist(), open(self.blfile, 'wb'))
+            pickle.dump(self.blacklist(), open(self.blfile, 'wb'))
         elif text == "@do":
             del self.highlights[e.source.nick]
-            pickle.dump(blacklist(), open(self.blfile, 'wb'))
+            pickle.dump(self.blacklist(), open(self.blfile, 'wb'))
         elif text == "@diag":
             c.privmsg(target, self.mind.diags)
         elif text == "@vtalk":
