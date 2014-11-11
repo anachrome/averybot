@@ -31,7 +31,7 @@ class AveryBot(SingleServerIRCBot):
 
         # words that will highlight some nicks, in the form of a dictionary
         # from words to the nicks they hilight.
-        self.highlights = {}
+        self.highlights = pickle.load(open(self.blfile, "rb"))
 
         self.channel = ident.channel    # active channel
         self.rstate = random.getstate() # random state
@@ -82,11 +82,11 @@ class AveryBot(SingleServerIRCBot):
             c.privmsg(target, self.talk())
         elif text == "@don't":
             self.highlights[e.source.nick] = e.source.nick
-            pickle.dump(self.blacklist(), open(self.blfile, 'wb'))
+            pickle.dump(self.highlights, open(self.blfile, 'wb'))
         elif text == "@do":
             if e.source.nick in self.highlights:
                 del self.highlights[e.source.nick]
-            pickle.dump(self.blacklist(), open(self.blfile, 'wb'))
+            pickle.dump(self.highlights, open(self.blfile, 'wb'))
         elif text == "@diag":
             c.privmsg(target, self.mind.diags)
         elif text == "@vtalk":
