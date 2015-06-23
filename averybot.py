@@ -34,7 +34,7 @@ class AveryBot(SingleServerIRCBot):
         try:
             self.highlights = pickle.load(open(self.blfile, "rb"))
         except FileNotFoundError:
-            self.highlights = []
+            self.highlights = {}
 
         self.channel = ident.channel    # active channel
         self.rstate = random.getstate() # random state
