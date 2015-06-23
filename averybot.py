@@ -31,7 +31,10 @@ class AveryBot(SingleServerIRCBot):
 
         # words that will highlight some nicks, in the form of a dictionary
         # from words to the nicks they hilight.
-        self.highlights = pickle.load(open(self.blfile, "rb"))
+        try:
+            self.highlights = pickle.load(open(self.blfile, "rb"))
+        except FileNotFoundError:
+            self.highlights = []
 
         self.channel = ident.channel    # active channel
         self.rstate = random.getstate() # random state
@@ -59,11 +62,15 @@ class AveryBot(SingleServerIRCBot):
             if sentence.startswith("!"):
                 continue
             # prevent hilights
+            tryagain = False
             for nope in self.blacklist():
                 if nope in sentence:
-                    print("cannot say because " + nope + " would highlight.  "
-                        + "retrying.");
-                    continue
+                    print("can't say because " + nope + " would highlight."
+                        + "  retrying.");
+                    tryagain = True
+                    break
+            if tryagain:
+                continue
             return sentence
 
     def on_welcome(self, c, e):
