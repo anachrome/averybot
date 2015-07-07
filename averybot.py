@@ -5,6 +5,7 @@ import configparser as cfg
 import irc
 from irc.bot import SingleServerIRCBot
 
+import markov
 from markov import Markov
 
 class IRCID:
