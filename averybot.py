@@ -53,7 +53,7 @@ class AveryBot(SingleServerIRCBot):
                 continue
             # prevent hilights
             tryagain = False
-            for nope in self.blacklist():
+            for nope in self.blacklist:
                 if nope in sentence:
                     print("can't say because " + nope + " would highlight."
                         + "  retrying.");
