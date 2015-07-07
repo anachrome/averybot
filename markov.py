@@ -253,14 +253,3 @@ def prettify(data):
         #     pretty += (" " + str(word))
 
     return pretty
-
-# when run by itself, this file generates a markov dictionary out of a log file
-if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("usage:", sys.argv[0], "LOG_FILE MARKOV_FILE")
-        sys.exit(1)
-
-    ave = Markov(2)
-    for line in open(sys.argv[1], 'r'):
-        ave.learn(sanitize(line))
-    pickle.dump(ave, open(sys.argv[2], 'wb'))
