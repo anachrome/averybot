@@ -11,12 +11,12 @@ peoples = {}
 
 for line in open(logfile, "r"):
     # not a talking line
-    if line[8] != "<":
+    if line[0] != "<":
         continue
 
     # find who is talking and what they say
     endwaka = line.find(">")
-    person = line[8:endwaka + 1]
+    person = line[0:endwaka + 1]
     line = line[endwaka + 2:]
 
     # write
