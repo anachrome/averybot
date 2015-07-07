@@ -254,39 +254,13 @@ def prettify(data):
 
     return pretty
 
+# when run by itself, this file generates a markov dictionary out of a log file
 if __name__ == "__main__":
-    #if len(sys.argv) > 1 and sys.argv[1] == "load":
-    #    random.setstate(pickle.load(open("rstate.froze", 'rb')))
-    #pickle.dump(random.getstate(), open("rstate.froze", 'wb'))
+    if len(sys.argv) != 3:
+        print("usage:", sys.argv[0], "LOG_FILE MARKOV_FILE")
+        sys.exit(1)
+
     ave = Markov(2)
-    for line in open("logs/master/master.log", 'r'):
-    #for line in open("test", 'r'):
-        forward = sanitize(line)
-        ave.learn(forward)
-    #ave = pickle.load(open("averybot.mem", 'rb'))
-
-    #for k in ave.ldict.keys():
-    #    print(k)
-    #print()
-    #for k in ave.rdict.keys():
-    #    print(k)
-    #print()
-
-    if len(sys.argv) > 1:
-        out = ave.gen_out(ave.find_context(sys.argv[1]))
-    else:
-        out = ave.gen()
-
-    print(prettify(out))
-    print(ave.diags)
-
-    # for debugging
-    #for e in ave.ldict:
-    #  print(e, ave.ldict[e])
-
-    # out = []
-    # while len(out) != 10:
-    #     out = list(ave.gen())
-    # print(prettify(out))
-    # for word in ave.gen():
-    #     print(repr(word))
+    for line in open(sys.argv[1], 'r'):
+        ave.learn(sanitize(line))
+    pickle.dump(ave, open(sys.argv[2], 'wb'))
