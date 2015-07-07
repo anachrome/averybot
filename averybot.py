@@ -37,6 +37,18 @@ class AveryBot(SingleServerIRCBot):
         except FileNotFoundError:
             self.blacklist = []
 
+        class State(dict):
+            def __getitem__(self, key):
+                if key not in self:
+                    super(State, self).__setitem__(key, random.getstate())
+
+                return super(State, self).__getitem__(key)
+
+        try:
+            self.states = pickle.load(open("rstate", "rb"))
+        except FileNotFoundError:
+            self.states = State()
+
         self.channel = ident.channel    # active channel
         self.rstate = random.getstate() # random state
         self.real_id = real_id          # whether self.real is a user or a nick
@@ -87,7 +99,7 @@ class AveryBot(SingleServerIRCBot):
         command = text.split()[0]
         args = text.split()[1:]
         if command == "@talk":
-            self.rstate = random.getstate()
+            self.states[target] = random.getstate()
             c.privmsg(target, self.talk(args))
         elif command == "@don't":
             self.blacklist.append(e.source.nick)
@@ -101,21 +113,25 @@ class AveryBot(SingleServerIRCBot):
         elif command == "@diag":
             c.privmsg(target, self.mind.diags)
         elif command == "@vtalk":
-            self.rstate = random.getstate()
+            self.states[target] = random.getstate()
             c.privmsg(target,
                 self.talk(args) + " [" + str(self.mind.diags) + "]")
         elif command == "@freeze":
-            pickle.dump(self.rstate, open("rstate", 'wb'))
+            pickle.dump(self.states, open("rstate", 'wb'))
         elif command == "@thaw":
-            self.rstate = pickle.load(open("rstate", 'rb'))
+            self.states = pickle.load(open("rstate", 'rb'))
             random.setstate(self.rstate)
         elif command in ["@repeat", "@again"]:
-            random.setstate(self.rstate)
+            temp = random.getstate()
+            random.setstate(self.states[e.source.nick])
             c.privmsg(target, self.talk(args))
+            random.setstate(temp)
         elif command in ["@vrepeat", "@vagain"]:
-            random.setstate(self.rstate)
+            temp = random.getstate()
+            random.setstate(self.states[e.source.nick])
             c.privmsg(target,
                 self.talk(args) + " [" + str(self.mind.diags) + "]")
+            random.setstate(temp)
         elif command == "@save":
             pickle.dump(self.mind, open(self.mindfile, 'wb'))
         elif command == "@load":
