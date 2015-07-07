@@ -84,6 +84,8 @@ class AveryBot(SingleServerIRCBot):
             if e.source.nick in self.blacklist:
                 self.blacklist.remove(e.source.nick)
             pickle.dump(self.blacklist, open(self.blfile, 'wb'))
+        elif text in ["@blacklist", "@bl"]:
+            c.privmsg(e.source.nick, ", ".join(self.blacklist))
         elif text == "@diag":
             c.privmsg(target, self.mind.diags)
         elif text == "@vtalk":
