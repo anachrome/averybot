@@ -103,7 +103,7 @@ class AveryBot(SingleServerIRCBot):
         elif command == "@vtalk":
             self.rstate = random.getstate()
             c.privmsg(target,
-                self.talk() + " [" + str(self.mind.diags) + "]")
+                self.talk(args) + " [" + str(self.mind.diags) + "]")
         elif command == "@freeze":
             pickle.dump(self.rstate, open("rstate", 'wb'))
         elif command == "@thaw":
@@ -111,11 +111,11 @@ class AveryBot(SingleServerIRCBot):
             random.setstate(self.rstate)
         elif command in ["@repeat", "@again"]:
             random.setstate(self.rstate)
-            c.privmsg(target, self.talk())
+            c.privmsg(target, self.talk(args))
         elif command in ["@vrepeat", "@vagain"]:
             random.setstate(self.rstate)
             c.privmsg(target,
-                self.mind.talk() + " [" + str(self.mind.diags) + "]")
+                self.mind.talk(args) + " [" + str(self.mind.diags) + "]")
         elif command == "@save":
             pickle.dump(self.mind, open(self.mindfile, 'wb'))
         elif command == "@load":
