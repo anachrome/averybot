@@ -44,7 +44,7 @@ class AveryBot(SingleServerIRCBot):
 
     def talk(self):
         while True:
-            sentence = self.mind.talk()
+            sentence = markov.prettify(self.mind.gen())
             if self.channel not in self.channels:
                 print("AVEBOT ERROR: oh fuck this shouldn't actually happen")
                 break
@@ -117,7 +117,7 @@ class AveryBot(SingleServerIRCBot):
             elif self.real_id == "nick":
                 source = e.source.nick
             if self.real in source.lower(): # extremely fucking liberal
-                self.mind.learn(text)
+                self.mind.learn(markov.sanitize(text))
                 pickle.dump(self.mind, open(self.mindfile, 'wb'))
 
 def main():
