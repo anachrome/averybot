@@ -48,7 +48,11 @@ class AveryBot(SingleServerIRCBot):
             if len(args) == 0:
                 sentence = markov.prettify(self.mind.gen())
             elif len(args) == 1:
-                sentence = markov.prettify(self.mind.gen_out(args[0]))
+                k = self.mind.find_context(args[0])
+                if k is not None:
+                    sentence = markov.prettify(self.mind.gen_out(k))
+                else:
+                    return "i don't know anything about " + args[0]
             else:
                 return "i can only talk about one thing at a time"
             if self.channel not in self.channels:
