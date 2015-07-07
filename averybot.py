@@ -115,7 +115,7 @@ class AveryBot(SingleServerIRCBot):
         elif command in ["@vrepeat", "@vagain"]:
             random.setstate(self.rstate)
             c.privmsg(target,
-                self.mind.talk(args) + " [" + str(self.mind.diags) + "]")
+                self.talk(args) + " [" + str(self.mind.diags) + "]")
         elif command == "@save":
             pickle.dump(self.mind, open(self.mindfile, 'wb'))
         elif command == "@load":
