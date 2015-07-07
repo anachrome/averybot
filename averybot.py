@@ -32,25 +32,15 @@ class AveryBot(SingleServerIRCBot):
         # words that will highlight some nicks, in the form of a dictionary
         # from words to the nicks they hilight.
         try:
-            self.highlights = pickle.load(open(self.blfile, "rb"))
+            self.blacklist = pickle.load(open(self.blfile, "rb"))
         except FileNotFoundError:
-            self.highlights = {}
+            self.blacklist = []
 
         self.channel = ident.channel    # active channel
         self.rstate = random.getstate() # random state
         self.real_id = real_id          # whether self.real is a user or a nick
         self.real = real                # real user she imitates (i.e. avery)
         #self.save_counter = 0           # write to disk every 100 talks
-
-    # return a list of words that cannot be said by comparing the hilights
-    # dict and the users currently in the channel
-    def blacklist(self):
-        bl = []
-        users = self.channels[self.channel].users()
-        for key in self.highlights:
-            if self.highlights[key] in users:
-                bl.append(key)
-        return bl
 
     def talk(self):
         while True:
@@ -88,12 +78,12 @@ class AveryBot(SingleServerIRCBot):
             self.rstate = random.getstate()
             c.privmsg(target, self.talk())
         elif text == "@don't":
-            self.highlights[e.source.nick] = e.source.nick
-            pickle.dump(self.highlights, open(self.blfile, 'wb'))
+            self.blacklist.append(e.source.nick)
+            pickle.dump(self.blacklist, open(self.blfile, 'wb'))
         elif text == "@do":
-            if e.source.nick in self.highlights:
-                del self.highlights[e.source.nick]
-            pickle.dump(self.highlights, open(self.blfile, 'wb'))
+            if e.source.nick in self.blacklist:
+                self.blacklist.remove(e.source.nick)
+            pickle.dump(self.blacklist, open(self.blfile, 'wb'))
         elif text == "@diag":
             c.privmsg(target, self.mind.diags)
         elif text == "@vtalk":
