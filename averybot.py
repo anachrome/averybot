@@ -42,9 +42,14 @@ class AveryBot(SingleServerIRCBot):
         self.real = real                # real user she imitates (i.e. avery)
         #self.save_counter = 0           # write to disk every 100 talks
 
-    def talk(self):
+    def talk(self, args):
         while True:
-            sentence = markov.prettify(self.mind.gen())
+            if len(args) == 0:
+                sentence = markov.prettify(self.mind.gen())
+            elif len(args) == 1:
+                sentence = markov.prettify(self.mind.gen_out(args[0]))
+            else:
+                return "i can only talk about one thing at a time"
             if self.channel not in self.channels:
                 print("AVEBOT ERROR: oh fuck this shouldn't actually happen")
                 break
@@ -74,41 +79,43 @@ class AveryBot(SingleServerIRCBot):
 
     def do_shit(self, c, e, target):
         text = e.arguments[0]
-        if text == "@talk":
+        command = text.split()[0]
+        args = text.split()[1:]
+        if command == "@talk":
             self.rstate = random.getstate()
-            c.privmsg(target, self.talk())
-        elif text == "@don't":
+            c.privmsg(target, self.talk(args))
+        elif command == "@don't":
             self.blacklist.append(e.source.nick)
             pickle.dump(self.blacklist, open(self.blfile, 'wb'))
-        elif text == "@do":
+        elif command == "@do":
             if e.source.nick in self.blacklist:
                 self.blacklist.remove(e.source.nick)
             pickle.dump(self.blacklist, open(self.blfile, 'wb'))
-        elif text in ["@blacklist", "@bl"]:
+        elif command in ["@blacklist", "@bl"]:
             c.privmsg(e.source.nick, ", ".join(self.blacklist))
-        elif text == "@diag":
+        elif command == "@diag":
             c.privmsg(target, self.mind.diags)
-        elif text == "@vtalk":
+        elif command == "@vtalk":
             self.rstate = random.getstate()
             c.privmsg(target,
                 self.talk() + " [" + str(self.mind.diags) + "]")
-        elif text == "@freeze":
+        elif command == "@freeze":
             pickle.dump(self.rstate, open("rstate", 'wb'))
-        elif text == "@thaw":
+        elif command == "@thaw":
             self.rstate = pickle.load(open("rstate", 'rb'))
             random.setstate(self.rstate)
-        elif text in ["@repeat", "@again"]:
+        elif command in ["@repeat", "@again"]:
             random.setstate(self.rstate)
             c.privmsg(target, self.talk())
-        elif text in ["@vrepeat", "@vagain"]:
+        elif command in ["@vrepeat", "@vagain"]:
             random.setstate(self.rstate)
             c.privmsg(target,
                 self.mind.talk() + " [" + str(self.mind.diags) + "]")
-        elif text == "@save":
+        elif command == "@save":
             pickle.dump(self.mind, open(self.mindfile, 'wb'))
-        elif text == "@load":
+        elif command == "@load":
             self.mind = pickle.load(open(self.mindfile, 'rb'))
-        elif text in ["@quit", "@die", "@bye", "@byebye", "@fuck off"]:
+        elif command in ["@quit", "@die", "@bye", "@byebye", "@fuck off"]:
             pickle.dump(self.mind, open(self.mindfile, 'wb'))
             self.die("byebye") # bug: "byebye" doesn't always do
         else: # to prevent learning commands
