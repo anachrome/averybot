@@ -53,12 +53,29 @@ class Diagnostics:
         return str(self.porb) + " / " + str(self.branches)
 
 class Markov:
-    def __init__(self, context, ldict = None):
+    def __init__(self, context, ldict = None, rdict = None):
         if ldict is None:
             ldict = ListDict()
+        if rdict is None:
+            rdict = ListDict()
         self.context = context
         self.ldict = ldict
+        self.rdict = rdict
         self.diags = None
+
+    def find_context(self, word):
+        # find starting [k]ontext
+        ks = list(self.ldict.keys()) + list(self.rdict.keys())
+
+        # this is a bit of a hack to make it do something sensible if the
+        # dictionary is empty
+        if not ks:
+            return []
+
+        shuffle(ks)
+        for k in ks:
+            if word in map(str, k): return k
+        return None
 
     def gen(self):
         porb = 1.0
@@ -77,15 +94,36 @@ class Markov:
         for k in ks:
             if k[0].tag_is("pos", "BEGIN"): break
 
+        return self.gen_out(k)
+
+    def gen_out(self, start_k):
+        porb = 1.0
+        branches = 0
+
         # yield everything in initial [k]ontext
-        tokes = list(k)
+        tokes = list(start_k)
         # for el in k:
         #     yield el
 
-        # yield the rest
-        while True:
-            pos += 1
+        # go backwards first
+        k = start_k
+        while not k[0].tag_is("pos", "BEGIN"):
+            possibs = self.rdict[k]
+            next = choice(possibs)
 
+            # diagnostics
+            porb /= len(possibs)
+            if len(possibs) > 1:
+                branches += 1
+
+            tokes.insert(0, next)
+            # yield next
+
+            k = (next,) + k[:-1]
+
+        # yield the rest
+        k = start_k
+        while not k[-1].tag_is("pos", "END"):
             possibs = self.ldict[k]
             next = choice(possibs)
 
@@ -94,16 +132,14 @@ class Markov:
             if len(possibs) > 1:
                 branches += 1
 
-            # next = self.ldict[k][randrange(len(self.ldict[k]))]
             tokes.append(next)
             # yield next
 
-            # found ending [k]ontext (?)
             k = k[1:] + (next,)
-            if next.tag_is("pos", "END"): break
 
         self.diags = Diagnostics(porb, branches)
         return tokes
+
 
     # add a set of data (list of markov elements) to the dictionary
     def learn(self, data):
@@ -121,6 +157,14 @@ class Markov:
             # add to ldictionary
             k = tuple(k)
             self.ldict[k].append(v)
+
+            v = data[i]
+            k = []
+            for j in range(1, self.context + 1):
+                k.append(data[i + j])
+
+            k = tuple(k)
+            self.rdict[k].append(v)
 
 # helper functions for markoving irc data
 
@@ -215,9 +259,26 @@ if __name__ == "__main__":
     #    random.setstate(pickle.load(open("rstate.froze", 'rb')))
     #pickle.dump(random.getstate(), open("rstate.froze", 'wb'))
     ave = Markov(2)
-    for line in open("averybot.mem", 'r'):
-        ave.learn(sanitize(line))
+    for line in open("logs/master/master.log", 'r'):
+    #for line in open("test", 'r'):
+        forward = sanitize(line)
+        ave.learn(forward)
     #ave = pickle.load(open("averybot.mem", 'rb'))
+
+    #for k in ave.ldict.keys():
+    #    print(k)
+    #print()
+    #for k in ave.rdict.keys():
+    #    print(k)
+    #print()
+
+    if len(sys.argv) > 1:
+        out = ave.gen_out(ave.find_context(sys.argv[1]))
+    else:
+        out = ave.gen()
+
+    print(prettify(out))
+    print(ave.diags)
 
     # for debugging
     #for e in ave.ldict:
@@ -229,5 +290,3 @@ if __name__ == "__main__":
     # print(prettify(out))
     # for word in ave.gen():
     #     print(repr(word))
-    print(prettify(ave.gen()))
-    print(ave.diags)
