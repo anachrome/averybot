@@ -74,7 +74,7 @@ class Markov:
 
         shuffle(ks)
         for k in ks:
-            if word in map(str, k): return k
+            if any(map(lambda s: word in str(s), k)): return k
         return None
 
     def gen(self):
@@ -102,8 +102,6 @@ class Markov:
 
         # yield everything in initial [k]ontext
         tokes = list(start_k)
-        # for el in k:
-        #     yield el
 
         # go backwards first
         k = start_k
@@ -117,8 +115,6 @@ class Markov:
                 branches += 1
 
             tokes.insert(0, next)
-            # yield next
-
             k = (next,) + k[:-1]
 
         # yield the rest
@@ -133,8 +129,6 @@ class Markov:
                 branches += 1
 
             tokes.append(next)
-            # yield next
-
             k = k[1:] + (next,)
 
         self.diags = Diagnostics(porb, branches)
