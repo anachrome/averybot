@@ -56,7 +56,7 @@ class AveryBot(SingleServerIRCBot):
         #self.save_counter = 0           # write to disk every 100 talks
 
     def talk(self, args):
-        while True:
+        for i in range(3):
             if len(args) == 0:
                 sentence = markov.prettify(self.mind.gen())
             elif len(args) == 1:
@@ -91,6 +91,7 @@ class AveryBot(SingleServerIRCBot):
             if tryagain:
                 continue
             return sentence
+        return "it's too hard :("
 
     def on_welcome(self, c, e):
         c.join(self.channel)
