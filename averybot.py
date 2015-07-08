@@ -70,9 +70,16 @@ class AveryBot(SingleServerIRCBot):
             if self.channel not in self.channels:
                 print("AVEBOT ERROR: oh fuck this shouldn't actually happen")
                 break
+
+            # catch line length
+            if len(sentence) > 450: # this should probably be good
+                print("message too long.  retrying")
+                continue
+
             # prevent convoing
             if sentence.startswith("!"):
                 continue
+
             # prevent hilights
             tryagain = False
             for nope in self.blacklist:
