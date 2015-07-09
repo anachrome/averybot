@@ -65,8 +65,16 @@ class AveryBot(SingleServerIRCBot):
                     sentence = markov.prettify(self.mind.gen_out(k))
                 else:
                     return "i don't know anything about " + args[0]
+            elif len(args) == 2:
+                k = self.mind.find_context(args)
+                if k is not None:
+                    sentence = markov.prettify(self.mind.gen_out(k))
+                else:
+                    return "i don't know anything about " + " ".join(args)
+
             else:
-                return "i can only talk about one thing at a time"
+                return "i can only talk about one (or maybe two) things at a time"
+
             if self.channel not in self.channels:
                 print("AVEBOT ERROR: oh fuck this shouldn't actually happen")
                 break
@@ -144,7 +152,7 @@ class AveryBot(SingleServerIRCBot):
             pickle.dump(self.mind, open(self.mindfile, 'wb'))
         elif command == "@load":
             self.mind = pickle.load(open(self.mindfile, 'rb'))
-        elif command in ["@quit", "@die", "@bye", "@byebye", "@fuck off"]:
+        elif command in ["@quit", "@die", "@bye", "@byebye"]:
             pickle.dump(self.mind, open(self.mindfile, 'wb'))
             self.die("byebye") # bug: "byebye" doesn't always do
         else: # to prevent learning commands

@@ -63,7 +63,7 @@ class Markov:
         self.rdict = rdict
         self.diags = None
 
-    def find_context(self, word):
+    def find_context(self, regex):
         # find starting [k]ontext
         ks = list(self.ldict.keys()) + list(self.rdict.keys())
 
@@ -73,8 +73,22 @@ class Markov:
             return []
 
         shuffle(ks)
-        for k in ks:
-            if any(map(lambda s: word in str(s), k)): return k
+
+        if type(regex) == str:
+            for k in ks:
+                if any(map(lambda s: re.compile(regex).search(str(s)), k)):
+                    return k
+        elif len(regex) == self.context:
+            for k in ks:
+                good = True
+                for el, r in zip(k, regex):
+                    if not re.compile(r).search(str(el)):
+                        good = False
+                if good: return k
+
+        #for k in ks:
+        #    if any(map(lambda s: re.compile(regex).search(str(s)), k)): return k
+
         return None
 
     def gen(self):
