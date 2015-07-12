@@ -74,17 +74,20 @@ class Markov:
 
         shuffle(ks)
 
-        if type(regex) == str:
-            for k in ks:
-                if any(map(lambda s: re.compile(regex).search(str(s)), k)):
-                    return k
-        elif len(regex) == self.context:
-            for k in ks:
-                good = True
-                for el, r in zip(k, regex):
-                    if not re.compile(r).search(str(el)):
-                        good = False
-                if good: return k
+        try:
+            if type(regex) == str:
+                for k in ks:
+                    if any(map(lambda s: re.compile(regex).search(str(s)), k)):
+                        return k
+            elif len(regex) == self.context:
+                for k in ks:
+                    good = True
+                    for el, r in zip(k, regex):
+                        if not re.compile(r).search(str(el)):
+                            good = False
+                    if good: return k
+        except re.error:
+            return None
 
         #for k in ks:
         #    if any(map(lambda s: re.compile(regex).search(str(s)), k)): return k
