@@ -6,7 +6,7 @@ import irc
 from irc.bot import SingleServerIRCBot
 
 import markov
-from markov import Markov
+from markov import Markov, MarkovElem
 
 class IRCID:
     def __init__(self, channel, nickname, realname, server, port = 6667):
@@ -43,6 +43,21 @@ class AveryBot(SingleServerIRCBot):
                     super(State, self).__setitem__(key, random.getstate())
 
                 return super(State, self).__getitem__(key)
+
+        # the handle generator
+        self.handlegen = Markov(2)
+        for line in open("nicks", "r"):
+            line = line[:-1] # strip newl
+            n = []
+            for c in line:
+                n.append(MarkovElem(c))
+
+            #n = map(MarkovElem, line)
+
+            n[0].tags["pos"] = "BEGIN"
+            n[-1].tags["pos"] = "END"
+
+            self.handlegen.learn(n)
 
         try:
             self.states = pickle.load(open("rstate", "rb"))
@@ -91,13 +106,14 @@ class AveryBot(SingleServerIRCBot):
             # prevent hilights
             tryagain = False
             for nope in self.blacklist:
-                if nope in sentence:
-                    print("can't say because " + nope + " would highlight."
-                        + "  retrying.");
-                    tryagain = True
-                    break
-            if tryagain:
-                continue
+                # generate non-blacklisted nick
+                new = "".join(map(str, self.handlegen.gen()))
+                while new in self.blacklist:
+                    new = "".join(map(str, self.handlegen.gen()))
+
+                # replace
+                sentence = sentence.replace(nope, new)
+
             return sentence
         return "it's too hard :("
 
