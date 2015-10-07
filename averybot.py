@@ -177,6 +177,13 @@ class AveryBot(SingleServerIRCBot):
         elif command in ["@quit", "@die", "@bye", "@byebye"]:
             pickle.dump(self.mind, open(self.mindfile, 'wb'))
             self.die("byebye") # bug: "byebye" doesn't always do
+        elif command == "@help":
+            c.privmsg(target, "naw, but feel free to check out my @source ;)")
+        elif command == "@source":
+            c.privmsg(target, "https://github.com/anachrome/averybot")
+        elif command == "@george":
+            c.privmsg(target,
+                "".join(i + "\x02" for i in "wow i'm a color hating fascist"))
         elif command[0] == "!": # ignore lurkers
             pass
         else: # to prevent learning commands
