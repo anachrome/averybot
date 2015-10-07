@@ -184,6 +184,8 @@ class AveryBot(SingleServerIRCBot):
         elif command == "@george":
             c.privmsg(target,
                 "".join(i + "\x02" for i in "wow i'm a color hating fascist"))
+        elif command[0:6] == "@convo":
+            c.privmsg(target, "!" + command[1:])
         elif command[0] == "!": # ignore lurkers
             pass
         else: # to prevent learning commands
