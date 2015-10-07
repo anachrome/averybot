@@ -1,6 +1,7 @@
 import random
 import pickle
 import configparser as cfg
+import re
 
 import irc
 from irc.bot import SingleServerIRCBot
@@ -107,12 +108,17 @@ class AveryBot(SingleServerIRCBot):
             tryagain = False
             for nope in self.blacklist:
                 # generate non-blacklisted nick
-                new = "".join(map(str, self.handlegen.gen()))
-                while new in self.blacklist:
+                try_again = True
+                while try_again:
                     new = "".join(map(str, self.handlegen.gen()))
+                    try_again = False
+                    for bad in self.blacklist:
+                        if new.lower() == bad.lower():
+                            try_again = True
+                print("replacing", nope, "with", new)
 
-                # replace
-                sentence = sentence.replace(nope, new)
+                nope_r = re.compile(re.escape(nope), re.IGNORECASE)
+                sentence = nope_r.sub(new, sentence)
 
             return sentence
         return "it's too hard :("
@@ -171,6 +177,8 @@ class AveryBot(SingleServerIRCBot):
         elif command in ["@quit", "@die", "@bye", "@byebye"]:
             pickle.dump(self.mind, open(self.mindfile, 'wb'))
             self.die("byebye") # bug: "byebye" doesn't always do
+        elif command[0] == "!": # ignore lurkers
+            pass
         else: # to prevent learning commands
             if self.real_id == "user":
                 source = e.source.user
