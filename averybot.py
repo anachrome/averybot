@@ -133,12 +133,16 @@ class AveryBot(SingleServerIRCBot):
         self.do_shit(c, e, e.target)
 
     def do_shit(self, c, e, target):
+        print(c, e, e.arguments, target)
         text = e.arguments[0]
         command = text.split()[0]
         args = text.split()[1:]
         if command == "@talk":
             self.states[target] = random.getstate()
             c.privmsg(target, self.talk(args))
+        elif command == "@send":
+            e.arguments = [" ".join(args[1:])]
+            self.do_shit(c, e, args[0])
         elif command == "@don't":
             self.blacklist.append(e.source.nick)
             pickle.dump(self.blacklist, open(self.blfile, 'wb'))
