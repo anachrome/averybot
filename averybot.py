@@ -18,7 +18,7 @@ class IRCID:
         self.port = port
 
 class AveryBot(SingleServerIRCBot):
-    def __init__(self, mindfile, blfile, real_id, real, ident):
+    def __init__(self, mindfile, blfile, real_id, real, ident, friend):
         SingleServerIRCBot.__init__(self,
             [(ident.server, ident.port)], ident.nickname, ident.realname)
 
@@ -70,6 +70,7 @@ class AveryBot(SingleServerIRCBot):
         self.real_id = real_id          # whether self.real is a user or a nick
         self.real = real                # real user she imitates (i.e. avery)
         #self.save_counter = 0           # write to disk every 100 talks
+        self.friend = friend
 
     def talk(self, args):
         for i in range(3):
@@ -127,13 +128,22 @@ class AveryBot(SingleServerIRCBot):
         c.join(self.channel)
 
     def on_privmsg(self, c, e):
+        if (e.source.nick == self.friend):
+            c.privmsg(self.channel, e.arguments[0])
+        self.do_shit(c, e, e.source.nick)
+
+    def on_action(self, c, e):
+        print(e.target)
+        if (irc.client.is_channel(e.target)): # this irc library is a PoFS
+            return
+        if (e.source.nick == self.friend):
+            c.privmsg(self.channel, self.friend + " " + e.arguments[0])
         self.do_shit(c, e, e.source.nick)
 
     def on_pubmsg(self, c, e):
         self.do_shit(c, e, e.target)
 
     def do_shit(self, c, e, target):
-        print(c, e, e.arguments, target)
         text = e.arguments[0]
         command = text.split()[0]
         args = text.split()[1:]
@@ -178,9 +188,10 @@ class AveryBot(SingleServerIRCBot):
             pickle.dump(self.mind, open(self.mindfile, 'wb'))
         elif command == "@load":
             self.mind = pickle.load(open(self.mindfile, 'rb'))
-        elif command in ["@quit", "@die", "@bye", "@byebye"]:
+        elif command in ["@quit", "@die", "@bye", "@byebye", "@fuck"]:
             pickle.dump(self.mind, open(self.mindfile, 'wb'))
-            self.die("byebye") # bug: "byebye" doesn't always do
+            msg = ":(" if command == "@fuck" else "byebye"
+            self.die(msg) # bug: "byebye" doesn't always do
         elif command == "@help":
             c.privmsg(target, "naw, but feel free to check out my @source ;)")
         elif command == "@source":
@@ -188,8 +199,9 @@ class AveryBot(SingleServerIRCBot):
         elif command == "@george":
             c.privmsg(target,
                 "".join(i + "\x02" for i in "wow i'm a color hating fascist"))
-        elif command == "@convo":
-            c.privmsg(target, "!" + command[1:] + " " + " ".join(args))
+        elif command in ["@convo", "@hug", "@static", "@fm"]:
+            print(self.friend, "!" + command[1:] + " " + " ".join(args))
+            c.privmsg(self.friend, ("!" + command[1:] + " " + " ".join(args)).strip())
         elif command[0] == "!": # ignore lurkers
             pass
         else: # to prevent learning commands
@@ -224,11 +236,13 @@ def main():
     mindfile = config["mindfile"]
     blfile = config["blfile"]
 
-    print(server, port, channel, nickname, realname)
+    friend = config["friend"]
+
+    print(server, port, channel, nickname, realname, friend)
 
     aveid = IRCID(channel, nickname, realname, server, port)
 
-    ave = AveryBot(mindfile, blfile, assimilee_id, assimilee, aveid)
+    ave = AveryBot(mindfile, blfile, assimilee_id, assimilee, aveid, friend)
     ave.start()
 
 if __name__ == "__main__":
