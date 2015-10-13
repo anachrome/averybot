@@ -151,6 +151,11 @@ class AveryBot(SingleServerIRCBot):
         if command == "@talk":
             self.states[target] = random.getstate()
             c.privmsg(target, self.talk(args))
+        elif command == "@bees":
+            self.states[target] = random.getstate()
+            c.privmsg(target, self.talk(["bees"]).replace("bees", "\x02bees\x02"))
+        elif command == "@bee":
+            c.privmsg(target, "there is never just one...");
         elif command == "@send":
             e.arguments = [" ".join(args[1:])]
             self.do_shit(c, e, args[0])
