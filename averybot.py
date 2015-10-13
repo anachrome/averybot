@@ -118,8 +118,7 @@ class AveryBot(SingleServerIRCBot):
                             try_again = True
                 print("replacing", nope, "with", new)
 
-                nope_r = re.compile(re.escape(nope), re.IGNORECASE)
-                sentence = nope_r.sub(new, sentence)
+                sentence = sentence.replace(nope, new)
 
             return sentence
         return "it's too hard :("
@@ -145,6 +144,8 @@ class AveryBot(SingleServerIRCBot):
 
     def do_shit(self, c, e, target):
         text = e.arguments[0]
+        print(repr(text))
+
         command = text.split()[0]
         args = text.split()[1:]
         if command == "@talk":
@@ -198,7 +199,8 @@ class AveryBot(SingleServerIRCBot):
             c.privmsg(target, "https://github.com/anachrome/averybot")
         elif command == "@george":
             c.privmsg(target,
-                "".join(i + "\x02" for i in "wow i'm a color hating fascist"))
+                "".join(i + "\x02" if i != 'g' else i
+                    for i in "wow i'm a color hating fascist"))
         elif command in ["@convo", "@hug", "@static", "@fm"]:
             print(self.friend, "!" + command[1:] + " " + " ".join(args))
             c.privmsg(self.friend, ("!" + command[1:] + " " + " ".join(args)).strip())
