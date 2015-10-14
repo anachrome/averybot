@@ -184,7 +184,7 @@ class AveryBot(SingleServerIRCBot):
             random.setstate(self.states[e.source.nick])
             c.privmsg(target, self.talk(args))
             random.setstate(temp)
-        elif command in ["@vrepeat", "@vagain"]:
+        elif command in ["@vrepeat", "@vagain", "@vagina"]:
             temp = random.getstate()
             random.setstate(self.states[e.source.nick])
             c.privmsg(target,
