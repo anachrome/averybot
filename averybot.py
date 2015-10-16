@@ -206,7 +206,7 @@ class AveryBot(SingleServerIRCBot):
             c.privmsg(target,
                 "".join(i + "\x02" if i != 'g' else i
                     for i in "wow i'm a color hating fascist"))
-        elif command in ["@convo", "@hug", "@static", "@fm"]:
+        elif command in ["@convo", "@hug", "@static", "@fm", "@alert"]:
             print(self.friend, "!" + command[1:] + " " + " ".join(args))
             c.privmsg(self.friend, ("!" + command[1:] + " " + " ".join(args)).strip())
         elif command[0] == "!": # ignore lurkers
