@@ -65,6 +65,7 @@ class AveryBot(SingleServerIRCBot):
         except FileNotFoundError:
             self.states = State()
 
+        self.nick = ident.nickname
         self.channel = ident.channel    # active channel
         self.rstate = random.getstate() # random state
         self.real_id = real_id          # whether self.real is a user or a nick
@@ -129,6 +130,7 @@ class AveryBot(SingleServerIRCBot):
         return "it's too hard :("
 
     def on_welcome(self, c, e):
+        c.mode(self.nick, '-x')
         c.join(self.channel)
 
     def on_privmsg(self, c, e):
