@@ -130,13 +130,14 @@ class AveryBot(SingleServerIRCBot):
         return "it's too hard :("
 
     def on_welcome(self, c, e):
-        c.mode(self.nick, '-x')
+        c.mode(self.nick, '+B-x')
         c.join(self.channel)
 
     def on_privmsg(self, c, e):
         if (e.source.nick == self.friend):
             c.privmsg(self.channel, e.arguments[0])
-        self.do_shit(c, e, e.source.nick)
+        else: # friends don't tell friends what to do
+            self.do_shit(c, e, e.source.nick)
 
     def on_action(self, c, e):
         print(e.target)
