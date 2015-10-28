@@ -2,6 +2,8 @@ import random
 import pickle
 import configparser as cfg
 import re
+import queue
+import string
 
 import irc
 from irc.bot import SingleServerIRCBot
@@ -10,12 +12,14 @@ import markov
 from markov import Markov, MarkovElem
 
 class IRCID:
-    def __init__(self, channels, nickname, realname, server, port = 6667):
-        self.channels = channels
+    def __init__(self, channel, cafe, nickname, realname, server, port = 6667, password = ""):
+        self.channel = channel
+        self.cafe = cafe
         self.nickname = nickname
         self.realname = realname
         self.server = server
         self.port = port
+        self.password = password
 
 class AveryBot(SingleServerIRCBot):
     def __init__(self, mindfile, blfile, logfile, real_id, real, ident, friend):
@@ -65,10 +69,13 @@ class AveryBot(SingleServerIRCBot):
             self.states = pickle.load(open("rstate", "rb"))
         except FileNotFoundError:
             self.states = State()
+        
+        self.waiting_for_friend = queue.Queue() # channels to send lurkers to
 
-        self.channels = ident.channels    # active channel
         self.nick = ident.nickname
-        self.channel = ident.channel    # active channel
+        self.password = ident.password
+        self.channel = ident.channel    # active channels
+        self.cafe = ident.cafe
         self.rstate = random.getstate() # random state
         self.real_id = real_id          # whether self.real is a user or a nick
         self.real = real                # real user she imitates (i.e. avery)
@@ -95,9 +102,10 @@ class AveryBot(SingleServerIRCBot):
             else:
                 return "i can only talk about one (or maybe two) things at a time"
 
-            if self.channel not in self.channels:
-                print("AVEBOT ERROR: oh fuck this shouldn't actually happen")
-                break
+            for channel in self.channel:
+                if channel not in self.channels:
+                    print("AVEBOT ERROR: oh fuck this shouldn't actually happen")
+                    return "i broke"
 
             # catch line length
             if len(sentence) > 450: # this should probably be good
@@ -133,12 +141,17 @@ class AveryBot(SingleServerIRCBot):
 
     def on_welcome(self, c, e):
         c.mode(self.nick, '+B-x')
-        for channel in self.channels:
+        c.privmsg("NickServ", "IDENTIFY " + self.password)
+        for channel in self.channel:
             c.join(channel)
+        c.join(self.cafe)
 
     def on_privmsg(self, c, e):
         if (e.source.nick == self.friend):
-            c.privmsg(self.channel, e.arguments[0])
+            if not self.waiting_for_friend.empty():
+                c.privmsg(self.waiting_for_friend.get(), e.arguments[0])
+            else:
+                print("somebody's lurking!...")
         else: # friends don't tell friends what to do
             self.do_shit(c, e, e.source.nick)
 
@@ -147,7 +160,8 @@ class AveryBot(SingleServerIRCBot):
         if (irc.client.is_channel(e.target)): # this irc library is a PoFS
             return
         if (e.source.nick == self.friend):
-            c.privmsg(self.channel, self.friend + " " + e.arguments[0])
+            for channel in self.channel:
+                c.privmsg(channel, self.friend + " " + e.arguments[0])
         self.do_shit(c, e, e.source.nick)
 
     def on_pubmsg(self, c, e):
@@ -157,74 +171,89 @@ class AveryBot(SingleServerIRCBot):
         text = e.arguments[0]
         print(repr(text))
 
-        command = text.split()[0]
-        args = text.split()[1:]
-        if command == "@talk":
-            self.states[target] = random.getstate()
-            c.privmsg(target, self.talk(args))
-        elif command == "@bees":
-            self.states[target] = random.getstate()
-            c.privmsg(target, self.talk(["bees"]).replace("bees", "\x02bees\x02"))
-        elif command == "@bee":
-            c.privmsg(target, "there is never just one...");
-        elif command == "@send":
-            e.arguments = [" ".join(args[1:])]
-            self.do_shit(c, e, args[0])
-        elif command == "@don't":
-            self.blacklist.append(e.source.nick)
-            pickle.dump(self.blacklist, open(self.blfile, 'wb'))
-        elif command == "@do":
-            if e.source.nick in self.blacklist:
-                self.blacklist.remove(e.source.nick)
-            pickle.dump(self.blacklist, open(self.blfile, 'wb'))
-        elif command in ["@blacklist", "@bl"]:
-            c.privmsg(e.source.nick, ", ".join(self.blacklist))
-        elif command == "@diag":
-            c.privmsg(target, self.mind.diags)
-        elif command == "@vtalk":
-            self.states[target] = random.getstate()
-            c.privmsg(target,
-                self.talk(args) + " [" + str(self.mind.diags) + "]")
-        elif command == "@freeze":
-            pickle.dump(self.states, open("rstate", 'wb'))
-        elif command == "@thaw":
-            self.states = pickle.load(open("rstate", 'rb'))
-            random.setstate(self.rstate)
-        elif command in ["@repeat", "@again"]:
-            temp = random.getstate()
-            random.setstate(self.states[e.source.nick])
-            c.privmsg(target, self.talk(args))
-            random.setstate(temp)
-        elif command in ["@vrepeat", "@vagain", "@vagina"]:
-            temp = random.getstate()
-            random.setstate(self.states[e.source.nick])
-            c.privmsg(target,
-                self.talk(args) + " [" + str(self.mind.diags) + "]")
-            random.setstate(temp)
-        elif command == "@save":
-            pickle.dump(self.mind, open(self.mindfile, 'wb'))
-        elif command == "@load":
-            self.mind = pickle.load(open(self.mindfile, 'rb'))
-        elif command in ["@quit", "@die", "@bye", "@byebye", "@fuck"]:
-            pickle.dump(self.mind, open(self.mindfile, 'wb'))
-            msg = ":(" if command == "@fuck" else "byebye"
-            self.die(msg) # bug: "byebye" doesn't always do
-        elif command == "@help":
-            c.privmsg(target, "naw, but feel free to check out my @source ;)")
-        elif command == "@source":
-            c.privmsg(target, "https://github.com/anachrome/averybot")
-        elif command == "@george":
-            c.privmsg(target,
-                "".join(i + "\x02" if i != 'g' else i
-                    for i in "wow i'm a color hating fascist"))
-        elif command == "@nbsp":
-            c.privmsg(target, "!convo grep Е")
-        elif command in ["@convo", "@hug", "@static", "@fm", "@alert"]:
-            print(self.friend, "!" + command[1:] + " " + " ".join(args))
-            c.privmsg(self.friend, ("!" + command[1:] + " " + " ".join(args)).strip())
-        elif command[0] == "!": # ignore lurkers
-            pass
-        else: # to prevent learning commands
+        command = ""
+        if target == self.cafe:
+            if text.split()[0].strip(string.punctuation) in ["averbot", "averybot"]:
+                command = text.split()[1]
+                args = text.split()[2:]
+        else:
+            if text[0] == '@':
+                command = text.split()[0][1:]
+                args = text.split()[1:]
+
+        if command:
+            #command = text.split()[0]
+            #args = text.split()[1:]
+            if command == "talk":
+                self.states[target] = random.getstate()
+                c.privmsg(target, self.talk(args))
+            elif command == "bees":
+                self.states[target] = random.getstate()
+                c.privmsg(target, self.talk(["bees"]).replace("bees", "\x02bees\x02"))
+            elif command == "bee":
+                c.privmsg(target, "there is never just one...");
+            elif command == "send":
+                e.arguments = [" ".join(args[1:])]
+                self.do_shit(c, e, args[0])
+            elif command == "don't":
+                self.blacklist.append(e.source.nick)
+                pickle.dump(self.blacklist, open(self.blfile, 'wb'))
+            elif command == "do":
+                if e.source.nick in self.blacklist:
+                    self.blacklist.remove(e.source.nick)
+                pickle.dump(self.blacklist, open(self.blfile, 'wb'))
+            elif command in ["blacklist", "bl"]:
+                c.privmsg(e.source.nick, ", ".join(self.blacklist))
+            elif command == "diag":
+                c.privmsg(target, self.mind.diags)
+            elif command == "vtalk":
+                self.states[target] = random.getstate()
+                c.privmsg(target,
+                    self.talk(args) + " [" + str(self.mind.diags) + "]")
+            elif command == "freeze":
+                pickle.dump(self.states, open("rstate", 'wb'))
+            elif command == "thaw":
+                self.states = pickle.load(open("rstate", 'rb'))
+                random.setstate(self.rstate)
+            elif command in ["repeat", "again"]:
+                temp = random.getstate()
+                random.setstate(self.states[e.source.nick])
+                c.privmsg(target, self.talk(args))
+                random.setstate(temp)
+            elif command in ["vrepeat", "vagain", "vagina"]:
+                temp = random.getstate()
+                random.setstate(self.states[e.source.nick])
+                c.privmsg(target,
+                    self.talk(args) + " [" + str(self.mind.diags) + "]")
+                random.setstate(temp)
+            elif command == "save":
+                pickle.dump(self.mind, open(self.mindfile, 'wb'))
+            elif command == "load":
+                self.mind = pickle.load(open(self.mindfile, 'rb'))
+            elif command in ["quit", "die", "bye", "byebye", "fuck"]:
+                pickle.dump(self.mind, open(self.mindfile, 'wb'))
+                msg = ":(" if command == "@fuck" else "byebye"
+                self.die(msg) # bug: "byebye" doesn't always do
+            elif command == "help":
+                c.privmsg(target, "naw, but feel free to check out my @source ;)")
+            elif command == "source":
+                c.privmsg(target, "https://github.com/anachrome/averybot")
+            elif command == "george":
+                c.privmsg(target,
+                    "".join(i + "\x02" if i != 'g' else i
+                        for i in "wow i'm a color hating fascist"))
+            elif command == "nbsp":
+                c.privmsg(target, "!convo grep Е")
+            elif command in ["convo", "hug", "static", "fm", "alert"]:
+                print(self.friend, "!" + command[1:] + " " + " ".join(args))
+                self.waiting_for_friend.put(target)
+                c.privmsg(self.friend, ("!" + command[1:] + " " + " ".join(args)).strip())
+            elif command[0] == "!": # ignore lurkers
+                pass
+            else:
+                command = ""
+
+        if not command: # to prevent learning commands
             if self.real_id == "user":
                 source = e.source.user
             elif self.real_id == "nick":
@@ -247,9 +276,11 @@ def main():
 
     server = config["server"]
     port   = int(config["port"])
-    channels = config["channels"].split()
+    channel = config["channels"].split()
+    cafe = config["cafe"]
     nickname = config["nickname"]
     realname = config["realname"]
+    password = config["password"]
 
     assimilee_id = config["assimilee_id"]
     assimilee = config["assimilee"]
@@ -260,9 +291,9 @@ def main():
 
     friend = config["friend"]
 
-    print(server, port, channels, nickname, realname, friend)
+    print(server, port, channel, cafe, nickname, realname, friend)
 
-    aveid = IRCID(channels, nickname, realname, server, port)
+    aveid = IRCID(channel, cafe, nickname, realname, server, port, password)
 
     ave = AveryBot(mindfile, blfile, logfile,
         assimilee_id, assimilee, aveid, friend)
