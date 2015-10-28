@@ -18,12 +18,13 @@ class IRCID:
         self.port = port
 
 class AveryBot(SingleServerIRCBot):
-    def __init__(self, mindfile, blfile, real_id, real, ident, friend):
+    def __init__(self, mindfile, blfile, logfile, real_id, real, ident, friend):
         SingleServerIRCBot.__init__(self,
             [(ident.server, ident.port)], ident.nickname, ident.realname)
 
         self.mindfile = mindfile
         self.blfile = blfile
+        self.logfile = logfile
         # load mind
         try:
             self.mind = pickle.load(open(mindfile, 'rb'))
@@ -131,7 +132,8 @@ class AveryBot(SingleServerIRCBot):
 
     def on_welcome(self, c, e):
         c.mode(self.nick, '+B-x')
-        c.join(self.channel)
+        for channel in self.channels:
+            c.join(channel)
 
     def on_privmsg(self, c, e):
         if (e.source.nick == self.friend):
@@ -214,6 +216,8 @@ class AveryBot(SingleServerIRCBot):
             c.privmsg(target,
                 "".join(i + "\x02" if i != 'g' else i
                     for i in "wow i'm a color hating fascist"))
+        elif command == "@nbsp":
+            c.privmsg(target, "!convo grep Е")
         elif command in ["@convo", "@hug", "@static", "@fm", "@alert"]:
             print(self.friend, "!" + command[1:] + " " + " ".join(args))
             c.privmsg(self.friend, ("!" + command[1:] + " " + " ".join(args)).strip())
@@ -226,6 +230,7 @@ class AveryBot(SingleServerIRCBot):
                 source = e.source.nick
             if self.real in source.lower(): # extremely fucking liberal
                 self.mind.learn(markov.sanitize(text))
+                print(text, file=open(self.logfile, 'a'))
                 pickle.dump(self.mind, open(self.mindfile, 'wb'))
 
 def main():
@@ -241,7 +246,7 @@ def main():
 
     server = config["server"]
     port   = int(config["port"])
-    channel = config["channel"]
+    channels = config["channels"].split()
     nickname = config["nickname"]
     realname = config["realname"]
 
@@ -250,14 +255,16 @@ def main():
 
     mindfile = config["mindfile"]
     blfile = config["blfile"]
+    logfile = config["logfile"]
 
     friend = config["friend"]
 
-    print(server, port, channel, nickname, realname, friend)
+    print(server, port, channels, nickname, realname, friend)
 
-    aveid = IRCID(channel, nickname, realname, server, port)
+    aveid = IRCID(channels, nickname, realname, server, port)
 
-    ave = AveryBot(mindfile, blfile, assimilee_id, assimilee, aveid, friend)
+    ave = AveryBot(mindfile, blfile, logfile,
+        assimilee_id, assimilee, aveid, friend)
     ave.start()
 
 if __name__ == "__main__":
