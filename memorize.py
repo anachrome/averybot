@@ -17,6 +17,6 @@ if __name__ == "__main__":
 
     mark = markov.Markov(order)
     for line in open(src, 'r'):
-        mark.learn(line)
+        mark.learn(markov.sanitize(line))
 
     pickle.dump(mark, open(dst, 'wb'))
