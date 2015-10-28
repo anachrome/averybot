@@ -9,8 +9,8 @@ import markov
 from markov import Markov, MarkovElem
 
 class IRCID:
-    def __init__(self, channel, nickname, realname, server, port = 6667):
-        self.channel = channel
+    def __init__(self, channels, nickname, realname, server, port = 6667):
+        self.channels = channels
         self.nickname = nickname
         self.realname = realname
         self.server = server
@@ -64,7 +64,7 @@ class AveryBot(SingleServerIRCBot):
         except FileNotFoundError:
             self.states = State()
 
-        self.channel = ident.channel    # active channel
+        self.channels = ident.channels    # active channel
         self.rstate = random.getstate() # random state
         self.real_id = real_id          # whether self.real is a user or a nick
         self.real = real                # real user she imitates (i.e. avery)
@@ -118,7 +118,8 @@ class AveryBot(SingleServerIRCBot):
         return "it's too hard :("
 
     def on_welcome(self, c, e):
-        c.join(self.channel)
+        for channel in self.channels:
+            c.join(channel)
 
     def on_privmsg(self, c, e):
         self.do_shit(c, e, e.source.nick)
@@ -193,7 +194,7 @@ def main():
 
     server = config["server"]
     port   = int(config["port"])
-    channel = config["channel"]
+    channels = config["channels"]
     nickname = config["nickname"]
     realname = config["realname"]
 
@@ -205,7 +206,7 @@ def main():
 
     print(server, port, channel, nickname, realname)
 
-    aveid = IRCID(channel, nickname, realname, server, port)
+    aveid = IRCID(channels, nickname, realname, server, port)
 
     ave = AveryBot(mindfile, blfile, assimilee_id, assimilee, aveid)
     ave.start()
