@@ -10,8 +10,8 @@ import markov
 from markov import Markov, MarkovElem
 
 class IRCID:
-    def __init__(self, channel, nickname, realname, server, port = 6667):
-        self.channel = channel
+    def __init__(self, channels, nickname, realname, server, port = 6667):
+        self.channels = channels
         self.nickname = nickname
         self.realname = realname
         self.server = server
@@ -66,6 +66,7 @@ class AveryBot(SingleServerIRCBot):
         except FileNotFoundError:
             self.states = State()
 
+        self.channels = ident.channels    # active channel
         self.nick = ident.nickname
         self.channel = ident.channel    # active channel
         self.rstate = random.getstate() # random state
