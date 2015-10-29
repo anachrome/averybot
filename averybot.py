@@ -1,9 +1,12 @@
-import random
-import pickle
 import configparser as cfg
-import re
+import datetime
+import pickle
 import queue
+import random
+import re
 import string
+import threading
+import time
 
 import irc
 from irc.bot import SingleServerIRCBot
@@ -22,7 +25,8 @@ class IRCID:
         self.password = password
 
 class AveryBot(SingleServerIRCBot):
-    def __init__(self, mindfile, blfile, logfile, real_id, real, ident, friend):
+    def __init__(self, mindfile, blfile, logfile,
+        real_id, real, ident, birthday, friend):
         SingleServerIRCBot.__init__(self,
             [(ident.server, ident.port)], ident.nickname, ident.realname)
 
@@ -81,6 +85,33 @@ class AveryBot(SingleServerIRCBot):
         self.real = real                # real user she imitates (i.e. avery)
         #self.save_counter = 0           # write to disk every 100 talks
         self.friend = friend
+        self.birthday = birthday
+
+    def at_bday(self, birthday):
+        now = datetime.datetime.today()
+        bday = now.replace(month  = int(self.birthday[0]),
+                           day    = int(self.birthday[1]),
+                           hour   = int(self.birthday[2]),
+                           minute = int(self.birthday[3]),
+                           second = int(self.birthday[4]))
+        if bday < now: bday.year += 1
+
+        bday_action = threading.Timer((bday - now).total_seconds(), birthday)
+        bday_action.daemon=True
+        bday_action.start()
+
+    def on_welcome(self, c, e):
+        c.mode(self.nick, '+B-x')
+        c.privmsg("NickServ", "IDENTIFY " + self.password)
+        for channel in self.channel:
+            c.join(channel)
+        c.join(self.cafe)
+
+        def birthday():
+            c.privmsg("#test", "i am TIME yo")
+            self.at_bday(birthday)
+
+        self.at_bday(birthday)
 
     def talk(self, args):
         for i in range(3):
@@ -138,13 +169,6 @@ class AveryBot(SingleServerIRCBot):
 
             return sentence
         return "it's too hard :("
-
-    def on_welcome(self, c, e):
-        c.mode(self.nick, '+B-x')
-        c.privmsg("NickServ", "IDENTIFY " + self.password)
-        for channel in self.channel:
-            c.join(channel)
-        c.join(self.cafe)
 
     def on_privmsg(self, c, e):
         if (e.source.nick == self.friend):
@@ -285,6 +309,8 @@ def main():
     assimilee_id = config["assimilee_id"]
     assimilee = config["assimilee"]
 
+    birthday = config["birthday"].split()
+
     mindfile = config["mindfile"]
     blfile = config["blfile"]
     logfile = config["logfile"]
@@ -296,7 +322,7 @@ def main():
     aveid = IRCID(channel, cafe, nickname, realname, server, port, password)
 
     ave = AveryBot(mindfile, blfile, logfile,
-        assimilee_id, assimilee, aveid, friend)
+        assimilee_id, assimilee, aveid, birthday, friend)
     ave.start()
 
 if __name__ == "__main__":
