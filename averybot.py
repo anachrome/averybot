@@ -247,7 +247,7 @@ class AveryBot(SingleServerIRCBot):
             elif command in ["convo", "hug", "static", "fm", "alert"]:
                 print(self.friend, "!" + command + " " + " ".join(args))
                 self.waiting_for_friend.put(target)
-                c.privmsg(self.friend, ("!" + command[1:] + " " + " ".join(args)).strip())
+                c.privmsg(self.friend, ("!" + command + " " + " ".join(args)).strip())
             elif command[0] == "!": # ignore lurkers
                 pass
             else:
