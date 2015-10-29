@@ -245,7 +245,7 @@ class AveryBot(SingleServerIRCBot):
             elif command == "nbsp":
                 c.privmsg(target, "!convo grep Е")
             elif command in ["convo", "hug", "static", "fm", "alert"]:
-                print(self.friend, "!" + command[1:] + " " + " ".join(args))
+                print(self.friend, "!" + command + " " + " ".join(args))
                 self.waiting_for_friend.put(target)
                 c.privmsg(self.friend, ("!" + command[1:] + " " + " ".join(args)).strip())
             elif command[0] == "!": # ignore lurkers
