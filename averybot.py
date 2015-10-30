@@ -25,7 +25,7 @@ class IRCID:
         self.password = password
 
 class AveryBot(SingleServerIRCBot):
-    def __init__(self, mindfile, blfile, logfile,
+    def __init__(self, mindfile, blfile, logfile, agefile,
         real_id, real, ident, birthday, friend):
         SingleServerIRCBot.__init__(self,
             [(ident.server, ident.port)], ident.nickname, ident.realname)
@@ -33,6 +33,7 @@ class AveryBot(SingleServerIRCBot):
         self.mindfile = mindfile
         self.blfile = blfile
         self.logfile = logfile
+        self.agefile = agefile
         # load mind
         try:
             self.mind = pickle.load(open(mindfile, 'rb'))
@@ -89,12 +90,9 @@ class AveryBot(SingleServerIRCBot):
 
     def at_bday(self, birthday):
         now = datetime.datetime.today()
-        bday = now.replace(month  = int(self.birthday[0]),
-                           day    = int(self.birthday[1]),
-                           hour   = int(self.birthday[2]),
-                           minute = int(self.birthday[3]),
-                           second = int(self.birthday[4]))
-        if bday < now: bday.year += 1
+        bday = self.birthday.replace(year = now.year)
+        if bday <= now: bday = bday.replace(year = bday.year + 1)
+        print("next birthday:", bday)
 
         bday_action = threading.Timer((bday - now).total_seconds(), birthday)
         bday_action.daemon=True
@@ -108,7 +106,9 @@ class AveryBot(SingleServerIRCBot):
         c.join(self.cafe)
 
         def birthday():
-            c.privmsg("#test", "i am TIME yo")
+            age = int(open(self.agefile, 'r').read()) + 1
+            c.action(self.cafe, "is %s years old today!" % age)
+            print(age, file=open(self.agefile, 'w'))
             self.at_bday(birthday)
 
         self.at_bday(birthday)
@@ -309,7 +309,8 @@ def main():
     assimilee_id = config["assimilee_id"]
     assimilee = config["assimilee"]
 
-    birthday = config["birthday"].split()
+    birthday = datetime.datetime.strptime(config["birthday"], "%m/%d %H:%M:%S")
+    agefile = config["agefile"]
 
     mindfile = config["mindfile"]
     blfile = config["blfile"]
@@ -321,7 +322,7 @@ def main():
 
     aveid = IRCID(channel, cafe, nickname, realname, server, port, password)
 
-    ave = AveryBot(mindfile, blfile, logfile,
+    ave = AveryBot(mindfile, blfile, logfile, agefile,
         assimilee_id, assimilee, aveid, birthday, friend)
     ave.start()
 
