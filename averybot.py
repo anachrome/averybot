@@ -113,6 +113,23 @@ class AveryBot(SingleServerIRCBot):
 
         self.at_bday(birthday)
 
+    # cache each channel's mode
+    def on_join(self, c, e):
+        if e.source.nick == self.nick:
+            c.mode(e.target, "")
+
+    # basically borrowed from irc.bot.py's _on_mode(), since this library is a
+    # god damn piece of shit
+    def on_channelmodeis(self, c, e):
+        modes = irc.modes.parse_channel_modes(e.arguments[1])
+        t = e.arguments[0]
+        ch = self.channels[t]
+        for mode in modes:
+            if mode[0] == '+':
+                f = self.channels[t].set_mode(mode[1], mode[2])
+            else:
+                f = self.channels[t].clear_mode(mode[1], mode[2])
+
     def talk(self, args):
         for i in range(3):
             if len(args) == 0:
@@ -206,6 +223,16 @@ class AveryBot(SingleServerIRCBot):
             if command == "talk":
                 self.states[target] = random.getstate()
                 c.privmsg(target, self.talk(args))
+            elif command == "sing":
+                if self.channels[target].has_mode("C"):
+                    c.privmsg(target, "Aesthetic freedom is like free speech; it is, indeed, a form of free speech.")
+                    c.privmsg(target, "and when the rights of free speech and free press are at risk, all of the other liberties we hold dear are endangered.")
+                self.states[target] = random.getstate()
+                raw = self.talk(args)
+                out = []
+                for word in raw.split():
+                    out.append("\x03" + str(random.randrange(16)) + word)
+                c.privmsg(target, " ".join(out) + "\x03")
             elif command == "bees":
                 self.states[target] = random.getstate()
                 c.privmsg(target, self.talk(["swamp", "monsters"]).replace("bees", "\x02bees\x02"))
