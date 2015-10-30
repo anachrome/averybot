@@ -162,11 +162,6 @@ class AveryBot(SingleServerIRCBot):
 
                 sentence = sentence.replace(nope, new)
 
-            # lel
-            sentence = sentence.replace("soul", "goomba")
-            sentence = sentence.replace("Soul", "Goomba")
-            sentence = sentence.replace("SOUL", "GOOMBA")
-
             return sentence
         return "it's too hard :("
 
