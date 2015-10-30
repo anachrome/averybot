@@ -230,6 +230,14 @@ class AveryBot(SingleServerIRCBot):
                 self.states[target] = random.getstate()
                 raw = self.talk(args)
                 out = []
+                # experimental ansi color shit
+                #for word in raw.split():
+                #    out.append("\033[0" + str(random.randrange(2))
+                #             + ";3"     + str(random.randrange(8))
+                #             + "m"      + word
+                #             + "\033[00;00m")
+                #print(repr(" ".join(out)))
+                #c.privmsg(target, " ".join(out))
                 for word in raw.split():
                     out.append("\x03" + str(random.randrange(16)) + word)
                 c.privmsg(target, " ".join(out) + "\x03")
