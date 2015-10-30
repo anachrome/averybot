@@ -244,6 +244,12 @@ class AveryBot(SingleServerIRCBot):
             elif command == "bees":
                 self.states[target] = random.getstate()
                 c.privmsg(target, self.talk(["swamp", "monsters"]).replace("bees", "\x02bees\x02"))
+            elif command == "sin":
+                self.states[target] = random.getstate()
+                sin = random.choice(["lust", "gluttony",
+                    "greed", "sloth", "wrath", "envy", "pride"])
+                sin = "".join("[" + "".join(j) + "]" for j in zip(sin.lower(), sin.upper()))
+                c.privmsg(target, self.talk([sin]))
             elif command == "bee":
                 c.privmsg(target, "there is never just one...");
             elif command == "send":
