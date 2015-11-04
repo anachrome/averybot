@@ -130,7 +130,7 @@ class AveryBot(SingleServerIRCBot):
             else:
                 f = self.channels[t].clear_mode(mode[1], mode[2])
 
-    def talk(self, args, diag=True):
+    def talk(self, args, diag=False):
         for i in range(3):
             if len(args) == 0:
                 sentence = markov.prettify(self.mind.gen(), diag)
