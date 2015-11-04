@@ -129,6 +129,7 @@ class Markov:
             # diagnostics
             porb /= len(possibs)
             if len(possibs) > 1:
+                tokes.insert(0, MarkovElem("", { "branches" : len(possibs) }))
                 branches += 1
 
             tokes.insert(0, next)
@@ -143,6 +144,7 @@ class Markov:
             # diagnostics
             porb /= len(possibs)
             if len(possibs) > 1:
+                tokes.append(MarkovElem("", { "branches" : len(possibs) }))
                 branches += 1
 
             tokes.append(next)
@@ -240,11 +242,16 @@ def sanitize(data):
     return ret
 
 # inverse of sanitize--turns a list of markov elements into a string
-def prettify(data):
+def prettify(data, diag=False):
     pretty = ""
 
     quoted = False
     for word in data:
+        if diag:
+            print("TAGS:", word.tags)
+            if "branches" in word.tags: # for better diag
+                pretty += '<' + str(word.tags["branches"]) + '> '
+                continue
         if word.tag_is("punc"):
             pretty = pretty[:-1] + str(word) + ' '
         elif word.tag_is("parenthesque", "open"):

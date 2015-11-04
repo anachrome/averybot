@@ -130,20 +130,20 @@ class AveryBot(SingleServerIRCBot):
             else:
                 f = self.channels[t].clear_mode(mode[1], mode[2])
 
-    def talk(self, args):
+    def talk(self, args, diag=True):
         for i in range(3):
             if len(args) == 0:
-                sentence = markov.prettify(self.mind.gen())
+                sentence = markov.prettify(self.mind.gen(), diag)
             elif len(args) == 1:
                 k = self.mind.find_context(args[0])
                 if k is not None:
-                    sentence = markov.prettify(self.mind.gen_out(k))
+                    sentence = markov.prettify(self.mind.gen_out(k), diag)
                 else:
                     return "i don't know anything about " + args[0]
             elif len(args) == 2:
                 k = self.mind.find_context(args)
                 if k is not None:
-                    sentence = markov.prettify(self.mind.gen_out(k))
+                    sentence = markov.prettify(self.mind.gen_out(k), diag)
                 else:
                     return "i don't know anything about " + " ".join(args)
 
@@ -269,7 +269,7 @@ class AveryBot(SingleServerIRCBot):
             elif command == "vtalk":
                 self.states[target] = random.getstate()
                 c.privmsg(target,
-                    self.talk(args) + " [" + str(self.mind.diags) + "]")
+                    self.talk(args, True) + " [" + str(self.mind.diags) + "]")
             elif command == "freeze":
                 pickle.dump(self.states, open("rstate", 'wb'))
             elif command == "thaw":
@@ -284,7 +284,7 @@ class AveryBot(SingleServerIRCBot):
                 temp = random.getstate()
                 random.setstate(self.states[e.source.nick])
                 c.privmsg(target,
-                    self.talk(args) + " [" + str(self.mind.diags) + "]")
+                    self.talk(args, True) + " [" + str(self.mind.diags) + "]")
                 random.setstate(temp)
             elif command == "save":
                 pickle.dump(self.mind, open(self.mindfile, 'wb'))
