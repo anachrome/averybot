@@ -247,11 +247,10 @@ def prettify(data, diag=False):
 
     quoted = False
     for word in data:
-        if diag:
-            print("TAGS:", word.tags)
-            if "branches" in word.tags: # for better diag
+        if "branches" in word.tags: # for better diag
+            if diag:
                 pretty += '<' + str(word.tags["branches"]) + '> '
-                continue
+            continue
         if word.tag_is("punc"):
             pretty = pretty[:-1] + str(word) + ' '
         elif word.tag_is("parenthesque", "open"):
