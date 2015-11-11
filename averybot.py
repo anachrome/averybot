@@ -183,6 +183,7 @@ class AveryBot(SingleServerIRCBot):
         return "it's too hard :("
 
     def on_privmsg(self, c, e):
+        print("RECEIVED:", e.arguments[0])
         if (e.source.nick == self.friend):
             if not self.waiting_for_friend.empty():
                 c.privmsg(self.waiting_for_friend.get(), e.arguments[0])
@@ -196,9 +197,12 @@ class AveryBot(SingleServerIRCBot):
         if (irc.client.is_channel(e.target)): # this irc library is a PoFS
             return
         if (e.source.nick == self.friend):
-            for channel in self.channel:
-                c.privmsg(channel, self.friend + " " + e.arguments[0])
-        self.do_shit(c, e, e.source.nick)
+            if not self.waiting_for_friend.empty():
+                c.privmsg(self.waiting_for_friend.get(), e.arguments[0])
+            else:
+                print("somebody's lurking!...")
+        else: # friends don't tell friends what to do
+            self.do_shit(c, e, e.source.nick)
 
     def on_pubmsg(self, c, e):
         self.do_shit(c, e, e.target)
