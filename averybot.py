@@ -228,7 +228,7 @@ class AveryBot(SingleServerIRCBot):
                 self.states[target] = random.getstate()
                 c.privmsg(target, self.talk(args))
             elif command == "sing":
-                if target in channels and self.channels[target].has_mode("C"):
+                if target in self.channels and self.channels[target].has_mode("C"):
                     c.privmsg(target, "Aesthetic freedom is like free speech; it is, indeed, a form of free speech.")
                     c.privmsg(target, "and when the rights of free speech and free press are at risk, all of the other liberties we hold dear are endangered.")
                 self.states[target] = random.getstate()
