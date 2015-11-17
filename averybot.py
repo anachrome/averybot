@@ -217,7 +217,7 @@ class AveryBot(SingleServerIRCBot):
                 command = text.split()[1]
                 args = text.split()[2:]
         else:
-            if text[0] == '@':
+            if len(text) and text[0] == '@':
                 command = text.split()[0][1:]
                 args = text.split()[1:]
 
@@ -308,6 +308,10 @@ class AveryBot(SingleServerIRCBot):
                         for i in "wow i'm a color hating fascist"))
             elif command == "nbsp":
                 c.privmsg(target, "!convo grep Е")
+            elif command == "snut":
+                c.privmsg(target, "scrollin")
+                for line in open("snut", 'r'):
+                    c.privmsg(target, line.rstrip())
             elif command in ["convo", "hug", "static", "fm", "alert"]:
                 print(self.friend, "!" + command + " " + " ".join(args))
                 self.waiting_for_friend.put(target)
