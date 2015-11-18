@@ -308,7 +308,7 @@ class AveryBot(SingleServerIRCBot):
                         for i in "wow i'm a color hating fascist"))
             elif command == "nbsp":
                 c.privmsg(target, "!convo grep Е")
-            elif command == "snut":
+            elif command in ["snut", "Snut"]:
                 c.privmsg(target, "scrollin")
                 for line in open("snut", 'r'):
                     c.privmsg(target, line.rstrip())
