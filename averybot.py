@@ -309,7 +309,7 @@ class AveryBot(SingleServerIRCBot):
             elif command == "nbsp":
                 c.privmsg(target, "!convo grep Е")
             elif command in ["snut", "Snut"]:
-                c.privmsg(target, "scrollin")
+                c.action(target, "scrollin")
                 for line in open("snut", 'r'):
                     c.privmsg(target, line.rstrip())
             elif command in ["convo", "hug", "static", "fm", "alert"]:
