@@ -177,7 +177,7 @@ class AveryBot(SingleServerIRCBot):
                             try_again = True
                 print("replacing", nope, "with", new)
 
-                sentence = sentence.replace(nope, new)
+                sentence = sentence.replace(nope, "\x02" + new + "\x02")
 
             return sentence
         return "it's too hard :("
