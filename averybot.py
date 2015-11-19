@@ -198,7 +198,7 @@ class AveryBot(SingleServerIRCBot):
             return
         if (e.source.nick == self.friend):
             if not self.waiting_for_friend.empty():
-                c.privmsg(self.waiting_for_friend.get(), e.arguments[0])
+                c.action(self.waiting_for_friend.get(), e.arguments[0])
             else:
                 print("somebody's lurking!...")
         else: # friends don't tell friends what to do
@@ -234,14 +234,6 @@ class AveryBot(SingleServerIRCBot):
                 self.states[target] = random.getstate()
                 raw = self.talk(args)
                 out = []
-                # experimental ansi color shit
-                #for word in raw.split():
-                #    out.append("\033[0" + str(random.randrange(2))
-                #             + ";3"     + str(random.randrange(8))
-                #             + "m"      + word
-                #             + "\033[00;00m")
-                #print(repr(" ".join(out)))
-                #c.privmsg(target, " ".join(out))
                 for word in raw.split():
                     out.append("\x03" + str(random.randrange(16)) + word)
                 c.privmsg(target, " ".join(out) + "\x03")
@@ -277,7 +269,10 @@ class AveryBot(SingleServerIRCBot):
             elif command == "freeze":
                 pickle.dump(self.states, open("rstate", 'wb'))
             elif command == "thaw":
-                self.states = pickle.load(open("rstate", 'rb'))
+                try:
+                    self.states = pickle.load(open("rstate", 'rb'))
+                except FileNotFoundError: # TODO this is shit
+                    continue
                 random.setstate(self.rstate)
             elif command in ["repeat", "again"]:
                 temp = random.getstate()
