@@ -271,9 +271,9 @@ class AveryBot(SingleServerIRCBot):
             elif command == "thaw":
                 try:
                     self.states = pickle.load(open("rstate", 'rb'))
+                    random.setstate(self.rstate)
                 except FileNotFoundError: # TODO this is shit
-                    continue
-                random.setstate(self.rstate)
+                    pass
             elif command in ["repeat", "again"]:
                 temp = random.getstate()
                 random.setstate(self.states[e.source.nick])
