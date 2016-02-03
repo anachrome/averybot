@@ -363,7 +363,12 @@ def main():
 
     ave = AveryBot(mindfile, blfile, logfile, agefile,
         assimilee_id, assimilee, aveid, birthday, friend)
-    ave.start()
+    # this is dumb
+    while True:
+        try:
+            ave.start()
+        except UnicodeDecodeError:
+            print("failed to decode, restarting bot")
 
 if __name__ == "__main__":
     main()
