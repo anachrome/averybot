@@ -121,6 +121,7 @@ class AveryBot(SingleServerIRCBot):
     # basically borrowed from irc.bot.py's _on_mode(), since this library is a
     # god damn piece of shit
     def on_channelmodeis(self, c, e):
+        print("debugging mode change:", e.arguments[1])
         modes = irc.modes.parse_channel_modes(e.arguments[1])
         t = e.arguments[0]
         ch = self.channels[t]
@@ -228,7 +229,7 @@ class AveryBot(SingleServerIRCBot):
                 self.states[target] = random.getstate()
                 c.privmsg(target, self.talk(args))
             elif command == "sing":
-                if target in self.channels and self.channels[target].has_mode("C"):
+                if target in self.channels and self.channels[target].has_mode("c"):
                     c.privmsg(target, "Aesthetic freedom is like free speech; it is, indeed, a form of free speech.")
                     c.privmsg(target, "and when the rights of free speech and free press are at risk, all of the other liberties we hold dear are endangered.")
                 self.states[target] = random.getstate()
